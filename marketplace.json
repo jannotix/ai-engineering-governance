@@ -6,7 +6,7 @@
       "name": "ai-engineering-governance",
       "source": "./plugins/ai-engineering-governance",
       "description": "A model-agnostic engineering workflow with adversarial architecture, maintainable modular source, governed execution, audit history, secure Git policy, independent review, and production release gates.",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "category": "development",
       "tags": ["engineering", "governance", "sdd", "ddd", "testing", "review", "release"],
       "strict": true
