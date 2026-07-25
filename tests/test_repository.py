@@ -19,14 +19,14 @@ class RepositoryTests(unittest.TestCase):
     def test_marketplace_manifest(self):
         data = json.loads(self.read("marketplace.json"))
         self.assertEqual(data["name"], "ai-engineering-governance")
-        self.assertEqual(data["plugins"][0]["version"], "1.0.3")
+        self.assertEqual(data["plugins"][0]["version"], "1.0.4")
         self.assertEqual(data["plugins"][0]["source"], "./plugins/ai-engineering-governance")
         self.assertNotIn("pluginRoot", data)
 
     def test_plugin_manifest(self):
         data = json.loads(self.plugin_read(".zcode-plugin/plugin.json"))
         self.assertEqual(data["name"], "ai-engineering-governance")
-        self.assertEqual(data["version"], "1.0.3")
+        self.assertEqual(data["version"], "1.0.4")
         self.assertEqual(data["license"], "FSL-1.1-MIT")
         self.assertEqual(data["author"]["name"], "Gianluca Iannotta")
 
@@ -44,20 +44,18 @@ class RepositoryTests(unittest.TestCase):
             "commands/ai-execute.md",
             "commands/ai-review.md",
             "commands/ai-arbiter.md",
-            "commands/ai-arbitrate.md",
             "commands/ai-release.md",
             "skills/ai-engineering-governance/SKILL.md",
         ]
         for rel in required:
             self.assertTrue((PLUGIN / rel).is_file(), rel)
 
-    def test_arbiter_command_is_canonical_and_arbitrate_is_legacy_alias(self):
-        canonical = self.plugin_read("commands/ai-arbiter.md").lower()
-        legacy = self.plugin_read("commands/ai-arbitrate.md").lower()
-        self.assertIn("arbiter role", canonical)
-        self.assertIn("canonical", canonical)
-        self.assertIn("legacy alias", legacy)
-        self.assertIn("/ai-arbiter", legacy)
+    def test_only_canonical_arbiter_command_exists(self):
+        canonical = PLUGIN / "commands" / "ai-arbiter.md"
+        legacy = PLUGIN / "commands" / "ai-arbitrate.md"
+        self.assertTrue(canonical.is_file())
+        self.assertFalse(legacy.exists())
+        self.assertIn("arbiter role", canonical.read_text(encoding="utf-8").lower())
 
     def test_agents_do_not_hardcode_models(self):
         prohibited = ("glm-", "minimax", "codex", "claude-", "gpt-", "gemini-", "qwen", "kimi", "grok")
@@ -68,7 +66,7 @@ class RepositoryTests(unittest.TestCase):
 
     def test_manifest_versions_are_current(self):
         skill = self.plugin_read("skills/ai-engineering-governance/SKILL.md")
-        self.assertIn("version: 1.0.3", skill)
+        self.assertIn("version: 1.0.4", skill)
         self.assertNotIn("v3", self.read("README.md").lower())
 
     def test_project_state_has_audit_baseline_deployment_and_arbitration(self):
@@ -96,8 +94,10 @@ class RepositoryTests(unittest.TestCase):
             "deployment_scope.md",
             "codebase_baseline.md",
             "arbitration_required",
+            "/ai-arbiter",
         ):
             self.assertIn(token, skill)
+        self.assertNotIn("/ai-arbitrate", skill)
 
     def test_maintainable_source_structure_policy(self):
         skill = self.plugin_read("skills/ai-engineering-governance/SKILL.md").lower()
