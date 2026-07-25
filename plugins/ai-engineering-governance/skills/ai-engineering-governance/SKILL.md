@@ -4,7 +4,7 @@ description: Use when planning, implementing, reviewing, migrating, testing, pac
 license: FSL-1.1-MIT
 metadata:
   author: Gianluca Iannotta
-  version: 1.0.3
+  version: 1.0.4
 ---
 
 # AI Engineering Governance
@@ -56,7 +56,7 @@ The Architect may maintain a roadmap in advance, but before every task is handed
 4. define exact scope and out-of-scope boundaries;
 5. define slices and acceptance criteria;
 6. identify regression surface and required tests;
-7. identify migration, external-integration, security, secret, and deployment impact;
+7. identify migration, external-integration, security, secret, deployment, and maintainability impact;
 8. set the task state to `READY_FOR_EXECUTION`.
 
 The Executor must never implement an unplanned task.
@@ -65,9 +65,9 @@ The Executor must never implement an unplanned task.
 
 When implementation evidence materially conflicts with the approved plan, the Architect must first determine whether normal replanning is sufficient.
 
-Use `ARBITRATION_REQUIRED` when there is an unresolved material disagreement about feasibility, correctness, security, scope, architecture, migration safety, or acceptance evidence and neither side should unilaterally decide.
+Use `ARBITRATION_REQUIRED` when there is an unresolved material disagreement about feasibility, correctness, security, scope, architecture, migration safety, maintainability, or acceptance evidence and neither side should unilaterally decide.
 
-The Architect records the disagreement and recommends invoking the configured Arbiter. The canonical command is `/ai-arbiter`; `/ai-arbitrate` remains a compatibility alias.
+The Architect records the disagreement and recommends invoking the configured Arbiter with `/ai-arbiter`.
 
 The Arbiter must independently inspect the plan, implementation evidence, repository state, and relevant requirements. Arbitration is recorded under `.ai/arbitration/`.
 
