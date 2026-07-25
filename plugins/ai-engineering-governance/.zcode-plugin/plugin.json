@@ -1,6 +1,6 @@
 {
   "name": "ai-engineering-governance",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Model-agnostic software engineering governance for adversarial architecture, maintainable modular implementation, controlled execution, arbitration, verification, and production release.",
   "author": {"name": "Gianluca Iannotta", "url": "https://github.com/jannotix"},
   "homepage": "https://github.com/jannotix/ai-engineering-governance",
