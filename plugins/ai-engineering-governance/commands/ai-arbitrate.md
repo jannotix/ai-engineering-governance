@@ -1,23 +1,19 @@
 ---
-description: Resolve a material unresolved disagreement between Architect planning and Executor implementation evidence.
+description: Legacy alias for /ai-arbiter. Resolve a material Architect/Executor disagreement without changing arbitration semantics.
 skills: ai-engineering-governance
 ---
 
-Use only when project state is `ARBITRATION_REQUIRED` or `ARBITRATION_IN_PROGRESS`.
+This command is a legacy alias for `/ai-arbiter`.
 
-Act strictly in the Arbiter role.
+Prefer `/ai-arbiter` in new workflows and documentation.
 
-If Arbiter mode is EXTERNAL, do not impersonate the configured external Arbiter. Prepare an arbitration handoff under `.ai/arbitration/`, append the handoff event to `.ai/PROJECT_HISTORY.md`, and stop for external arbitration.
+Execute the same governed arbitration workflow as `/ai-arbiter`:
 
-If Arbiter mode is INTERNAL, independently inspect requirements, baseline, task plan, repository state, Executor evidence, tests, and security/migration/deployment implications.
+- use only when project state is `ARBITRATION_REQUIRED` or `ARBITRATION_IN_PROGRESS`;
+- act strictly in the Arbiter role;
+- preserve INTERNAL versus EXTERNAL Arbiter behavior;
+- record arbitration under `.ai/arbitration/`;
+- append the event to `.ai/PROJECT_HISTORY.md`;
+- require Architect re-authorization to `READY_FOR_EXECUTION` before Executor work resumes.
 
-Record the decision under `.ai/arbitration/` and append it to `.ai/PROJECT_HISTORY.md`.
-
-Return exactly one:
-
-- ARBITRATION_RESOLVED_ARCHITECT_PLAN
-- ARBITRATION_RESOLVED_EXECUTOR_CONSTRAINT
-- ARBITRATION_REPLAN_REQUIRED
-- ARBITRATION_BLOCKED
-
-After arbitration, the Architect must re-authorize the task as `READY_FOR_EXECUTION` before Executor work resumes.
+Do not introduce behavior that differs from the canonical `/ai-arbiter` command.
