@@ -165,7 +165,7 @@ If normal replanning cannot safely resolve the disagreement, the Architect sets:
 ARBITRATION_REQUIRED
 ```
 
-Then run the canonical command:
+Then run:
 
 ```text
 /ai-arbiter
@@ -176,8 +176,6 @@ For an internal Arbiter, select its configured model first.
 For an external Arbiter, `/ai-arbiter` prepares the handoff under `.ai/arbitration/`.
 
 The Arbiter is independent. Neither Architect nor Executor automatically wins the disagreement.
-
-`/ai-arbitrate` remains available as a backward-compatible legacy alias, but new workflows should use `/ai-arbiter`.
 
 ## Milestone review
 
@@ -306,8 +304,7 @@ Production packages contain only runtime-required files.
 | `/ai-status` | Show state, history, Git status, blockers, and next action |
 | `/ai-architect` | Baseline the codebase and plan/re-authorize the next task |
 | `/ai-execute` | Implement and validate approved work, then create the local task commit |
-| `/ai-arbiter` | Canonical Arbiter command for material Architect/Executor disagreement |
-| `/ai-arbitrate` | Backward-compatible legacy alias for `/ai-arbiter` |
+| `/ai-arbiter` | Resolve or hand off a material Architect/Executor disagreement |
 | `/ai-review` | Independently review a completed milestone |
 | `/ai-start` | Continue from current governed state |
 | `/ai-release` | Run final production-readiness workflow |
