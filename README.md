@@ -1,30 +1,30 @@
 # AI Engineering Governance
 
-AI Engineering Governance is a model-agnostic ZCode plugin for structured software delivery.
+AI Engineering Governance is a model-agnostic ZCode plugin for structured, auditable software delivery.
 
-It separates software work into three roles:
+It separates work into three primary roles and one optional dispute role:
 
-- **Architect** — owns requirements, architecture, milestones, tasks, slices, acceptance criteria, migrations, test strategy, and technical decisions.
-- **Executor** — implements approved slices, keeps the repository working, and produces executable verification evidence.
+- **Architect** — adversarially reverse-engineers the codebase, owns requirements and architecture, and approves every task before implementation.
+- **Executor** — implements only approved tasks, verifies them, records evidence, and creates local task commits.
 - **Reviewer** — independently verifies completed milestones and final release candidates.
+- **Arbiter** — resolves material unresolved disagreement between Architect planning and Executor implementation evidence.
 
-The plugin does not require a specific model or provider. Each role uses the model selected by the user.
+The plugin does not require a specific model or provider.
 
-## Principles
+## Core guarantees
 
-- Specification-driven development for meaningful changes.
-- Existing project conventions before new abstractions.
-- Simple modular design by default.
-- Domain-driven design only when domain complexity justifies it.
-- Minimal code and minimal dependencies.
-- No deprecated or end-of-life technology.
-- Small, independently verifiable slices.
-- Local-first testing.
-- Docker or equivalent local infrastructure when practical.
-- Real sandbox or test-environment validation for external integrations.
-- Clean-install verification for every final release.
-- Upgrade and migration verification for existing installations.
-- Independent adversarial review before production readiness.
+- Initial adversarial analysis of the complete codebase before implementation.
+- Architect planning and approval before every Executor task.
+- Append-only project engineering history.
+- Local Git commit for every validated task.
+- No Git push without explicit authorization.
+- Plaintext secrets excluded from Git by default.
+- Architect and Reviewer always check for plaintext secret exposure.
+- Development workspace separated from the production deployment scope.
+- Tests, development documentation, governance, and evidence excluded from production packages by default.
+- Independent milestone and release review.
+- Optional independent arbitration when planning and implementation materially disagree.
+- Clean-install and existing-install migration verification.
 - Evidence before completion claims.
 
 ## Install in ZCode
@@ -38,162 +38,196 @@ The plugin does not require a specific model or provider. Each role uses the mod
 
 ## First use
 
-Run `/ai-init`.
-
-The plugin inspects the current workspace and creates the project-local `.ai/` state required for governance.
-
-The `.ai/` directory belongs to the project and should normally be committed with the source code. It stores project-specific architecture, requirements, milestones, evidence, decisions, reviews, and release state. The governance method itself remains in this plugin.
-
-Then run `/ai-setup` and record the models or review mode you want to use for the three roles.
-
-Example:
-
-```text
-Architect: your preferred architecture/reasoning model
-Executor: your preferred coding model
-Reviewer: your preferred review model or external reviewer
-Reviewer mode: INTERNAL or EXTERNAL
-```
-
-## Typical workflow
-
-### 1. Initialize the project
+Run:
 
 ```text
 /ai-init
 /ai-setup
 ```
 
-The plugin creates or validates `.ai/`, identifies whether the project is greenfield or an existing installation, and records the configured role bindings.
+`/ai-init` creates or validates project-local `.ai/` state.
 
-### 2. Architecture and planning
+The initial project state includes:
 
-Select the model configured for the **Architect** role in the ZCode model picker, then run:
+```text
+.ai/
+├── CODEBASE_BASELINE.md
+├── DEPLOYMENT_SCOPE.md
+├── PROJECT_HISTORY.md
+├── CONFIG.md
+├── STATUS.md
+├── CURRENT_MILESTONE.md
+├── ...
+└── arbitration/
+```
+
+The Architect must complete the initial adversarial codebase baseline before implementation can begin.
+
+`/ai-setup` records role assignments:
+
+```text
+Architect: your preferred architecture/reasoning model
+Executor: your preferred coding model
+Reviewer: your preferred review model or external reviewer
+Reviewer mode: INTERNAL or EXTERNAL
+Arbiter: optional dispute-resolution model or external arbiter
+Arbiter mode: DISABLED, INTERNAL, or EXTERNAL
+```
+
+Role bindings are governance configuration. They do not switch the ZCode model automatically.
+
+## Typical workflow
+
+### Initial baseline
+
+Select the configured Architect model and run:
 
 ```text
 /ai-architect
 ```
 
-or invoke the plugin subagent directly:
+The Architect first performs:
 
 ```text
-@ai-engineering-governance:architect
+complete codebase
+    ↓
+adversarial reverse engineering
+    ↓
+security and plaintext-secret check
+    ↓
+deployment boundary
+    ↓
+CODEBASE_BASELINE.md
 ```
 
-The Architect is responsible for:
+### Every task
+
+Before each task, the Architect returns:
 
 ```text
-requirements
+current repository state
     ↓
-architecture
+changes since previous task
     ↓
-roadmap
+adversarial impact analysis
     ↓
-milestones
-    ↓
-tasks
-    ↓
-small verifiable slices
+task scope and slices
     ↓
 acceptance criteria
     ↓
-test and migration strategy
+tests / regressions / migrations
+    ↓
+security / secrets / deployment impact
+    ↓
+READY_FOR_EXECUTION
 ```
 
-The Architect does not perform normal feature implementation.
-
-### 3. Implementation
-
-When an approved slice is ready, select the model configured for the **Executor** role, then run:
+Then select the configured Executor model and run:
 
 ```text
 /ai-execute
 ```
 
-or:
+The Executor performs:
 
 ```text
-@ai-engineering-governance:executor
-```
-
-The Executor implements only the approved slice and must leave the project in a working state.
-
-```text
-approved slice
+approved task
     ↓
 implementation
     ↓
 focused tests
     ↓
-regression verification
+regression and runtime verification
     ↓
-local runtime verification
+TASK_VALIDATED
     ↓
-evidence
+staged diff + plaintext-secret check
+    ↓
+local task commit
+    ↓
+NO PUSH
 ```
 
-If the Executor discovers an architectural problem, it must stop and raise an architecture blocker instead of redesigning the system independently.
+The Architect then plans or re-authorizes the next task.
 
-### 4. Milestone review
+### Arbitration
 
-When the milestone is complete, review it independently.
+When Executor evidence materially conflicts with the approved plan, the Executor stops and returns the evidence to the Architect.
 
-For an **internal reviewer**, select the configured Reviewer model and run:
+If normal replanning cannot safely resolve the disagreement, the Architect sets:
+
+```text
+ARBITRATION_REQUIRED
+```
+
+Then run:
+
+```text
+/ai-arbitrate
+```
+
+For an internal Arbiter, select its configured model first.
+
+For an external Arbiter, `/ai-arbitrate` prepares the handoff under `.ai/arbitration/`.
+
+The Arbiter is independent. Neither Architect nor Executor automatically wins the disagreement.
+
+### Milestone review
+
+For an internal Reviewer:
 
 ```text
 /ai-review
 ```
 
-or:
+For an external Reviewer, the command prepares the handoff and the external reviewer inspects the same repository and `.ai/` state.
 
-```text
-@ai-engineering-governance:reviewer
-```
+The Reviewer always checks security, plaintext secrets, migrations, tests, runtime evidence, and deployment-scope correctness.
 
-For an **external reviewer**, run:
+### Continue later
 
-```text
-/ai-review
-```
-
-The plugin prepares the review handoff and marks the project ready for external review. Run the external reviewer against the same repository and `.ai/` state, then record the resulting review artifact in the project.
-
-The reviewer must treat previous implementation reports as claims, not proof.
-
-### 5. Continue the project
-
-For normal daily use, run:
+When reopening a governed project:
 
 ```text
 /ai-start
 ```
 
-The command reads `.ai/STATUS.md` and routes the next governed action according to the current state.
+The plugin reads `.ai/STATUS.md` and the latest `PROJECT_HISTORY.md` event to route the next role.
 
-### 6. Final release
+Use:
 
-When all milestones are complete, run:
+```text
+/ai-status
+```
+
+to see current task, latest history event, Git state, blockers, arbitration, local commit state, and the exact next action.
+
+### Final release
+
+Run:
 
 ```text
 /ai-release
 ```
 
-The release workflow verifies, where applicable:
+The final package is built from `.ai/DEPLOYMENT_SCOPE.md`, not by uploading the entire development workspace.
+
+The release workflow verifies:
 
 ```text
 requirements
     ↓
-full test and quality gates
+tests and quality gates
     ↓
-existing-install migrations
+migration/upgrade path when applicable
     ↓
-clean installation from zero
+clean installation
     ↓
 external integrations
     ↓
-security verification
+plaintext-secret scan
     ↓
-final package
+production-only deployment package
     ↓
 package extraction and reinstall
     ↓
@@ -204,52 +238,71 @@ or
 NOT_READY_FOR_PRODUCTION
 ```
 
-## Important: role binding does not switch models automatically
+## Project history
 
-`/ai-setup` records which model you intend to use for each role. It does **not** change the active ZCode model automatically.
+`.ai/PROJECT_HISTORY.md` is append-only.
 
-Before invoking a role, select its configured model in the ZCode model picker:
+It records material actions with timestamp, role, configured model or external-role label, milestone/task/slice, result, evidence, Git action, and next state.
 
-```text
-Select Architect model
-    ↓
-/ai-architect
-    ↓
-Select Executor model
-    ↓
-/ai-execute
-    ↓
-Select Reviewer model or use external review
-    ↓
-/ai-review
-```
+This history survives chat/session changes and is versioned with the project.
 
-Plugin subagents currently use **Inherit**, so they inherit the active ZCode model. This is intentional and keeps the plugin provider-neutral.
+## Git policy
+
+Each validated task requires a local commit.
+
+The Executor stages only the approved task files and relevant `.ai/` evidence/state. It must inspect staged content before committing.
+
+Git push is disabled by policy unless the user explicitly authorizes that specific push action.
+
+A previous push authorization does not authorize future pushes.
+
+## Secret policy
+
+Plaintext secrets are excluded from Git by default.
+
+Architect and Reviewer always inspect for plaintext secret exposure. Executor checks staged content before task commits.
+
+If a secret is already tracked, adding it to ignore rules is not enough. It must be removed from tracking and potential exposure assessed for revocation or rotation.
+
+Prefer runtime environment variables, secret managers, or encrypted secret stores.
+
+## Development workspace and production codebase
+
+The repository is the development workspace.
+
+`.ai/DEPLOYMENT_SCOPE.md` defines the production runtime scope.
+
+For new projects, development-only content should live outside the deployable production scope. This includes tests, development documentation, `.ai/`, review artifacts, evidence, local tooling, and similar material.
+
+For existing projects, the Architect identifies the current safe runtime boundary instead of blindly restructuring the repository.
+
+Production packages contain only runtime-required files.
 
 ## Commands
 
 | Command | Purpose |
 | --- | --- |
-| `/ai-init` | Initialize governance in the current repository |
-| `/ai-setup` | Define role bindings and project execution preferences |
-| `/ai-status` | Show current milestone, slice, blockers, and next action |
-| `/ai-architect` | Run architecture and planning work |
-| `/ai-execute` | Implement the currently approved slice |
+| `/ai-init` | Initialize or upgrade governance state |
+| `/ai-setup` | Configure role bindings and review/arbitration modes |
+| `/ai-status` | Show state, history, Git status, blockers, and next action |
+| `/ai-architect` | Baseline the codebase and plan/re-authorize the next task |
+| `/ai-execute` | Implement and validate approved work, then create the local task commit |
+| `/ai-arbitrate` | Resolve or hand off a material Architect/Executor disagreement |
 | `/ai-review` | Independently review a completed milestone |
-| `/ai-start` | Continue from the current governed project state |
-| `/ai-release` | Run final release-readiness workflow |
+| `/ai-start` | Continue from current governed state |
+| `/ai-release` | Run final production-readiness workflow |
 
 ## Model selection
 
-The plugin is deliberately provider-neutral.
+Plugin subagents do not hard-code model IDs. They inherit the model selected in ZCode.
 
-Plugin subagents do not hard-code model IDs. They inherit the model selected in ZCode. This avoids coupling the workflow to a vendor-specific identifier and keeps the plugin usable with current and future providers.
+Before invoking a role, select its configured model in the ZCode model picker.
 
-For workflows that use different models for different roles, select the intended model before invoking the relevant role or command. Record the chosen role assignments with `/ai-setup`.
+External Reviewer and Arbiter modes allow those roles to run outside ZCode.
 
 ## Architecture policy
 
-The architect chooses the least complex structure that safely satisfies the requirements:
+The Architect chooses the least complex structure that safely satisfies the requirements:
 
 1. Preserve the existing architecture when appropriate.
 2. Prefer simple modular design.
@@ -258,24 +311,6 @@ The architect chooses the least complex structure that safely satisfies the requ
 5. Introduce distributed services only with explicit operational justification.
 
 Patterns are tools, not goals.
-
-## Delivery policy
-
-A final release is not complete until:
-
-- required tests pass;
-- relevant local runtime paths are exercised;
-- upgrade migrations pass when applicable;
-- a clean installation from empty state passes;
-- required external integrations are tested in an appropriate environment;
-- the final release package is extracted and verified again;
-- adversarial release review is complete;
-- production readiness is explicitly determined.
-
-The only final production verdicts are:
-
-- `READY_FOR_PRODUCTION`
-- `NOT_READY_FOR_PRODUCTION`
 
 ## License
 
