@@ -1,6 +1,6 @@
 # Project State Contract
 
-`/ai-init` creates `.ai/` in the workspace root.
+`/ai-init` creates or validates `.ai/` in the workspace root.
 
 Required structure:
 
@@ -10,6 +10,9 @@ Required structure:
 ├── PROJECT.md
 ├── REQUIREMENTS.md
 ├── ARCHITECTURE.md
+├── CODEBASE_BASELINE.md
+├── DEPLOYMENT_SCOPE.md
+├── PROJECT_HISTORY.md
 ├── ROADMAP.md
 ├── STATUS.md
 ├── CURRENT_MILESTONE.md
@@ -24,6 +27,7 @@ Required structure:
 ├── milestones/
 ├── evidence/
 ├── reviews/
+├── arbitration/
 ├── migrations/
 ├── followups/
 ├── deferred/
@@ -32,16 +36,25 @@ Required structure:
 
 The `.ai/` directory stores project state, not reusable governance policy.
 
-Do not store credentials or secrets in `.ai/`.
+Do not store credentials or secret values in `.ai/`.
+
+`PROJECT_HISTORY.md` is append-only.
 
 ## STATUS.md states
 
 - INTAKE
+- BASELINING
 - PLANNING
-- READY
+- TASK_PLANNING
+- READY_FOR_EXECUTION
 - IMPLEMENTING
 - BLOCKED_ARCHITECTURE
 - BLOCKED_EXTERNAL
+- ARBITRATION_REQUIRED
+- ARBITRATION_IN_PROGRESS
+- TASK_VERIFYING
+- TASK_VALIDATED
+- LOCAL_COMMITTED
 - VERIFYING
 - READY_FOR_REVIEW
 - FIX_REQUIRED
