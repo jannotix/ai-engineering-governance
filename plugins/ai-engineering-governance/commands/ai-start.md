@@ -11,7 +11,7 @@ Routing:
 - READY_FOR_EXECUTION or IMPLEMENTING → Executor.
 - BLOCKED_ARCHITECTURE → Architect.
 - BLOCKED_EXTERNAL → report required user input or access.
-- ARBITRATION_REQUIRED or ARBITRATION_IN_PROGRESS → Arbiter workflow.
+- ARBITRATION_REQUIRED or ARBITRATION_IN_PROGRESS → Arbiter workflow via canonical `/ai-arbiter` command.
 - TASK_VERIFYING or TASK_VALIDATED → Executor verification/commit completion.
 - LOCAL_COMMITTED → Architect plans or re-authorizes the next task.
 - VERIFYING or READY_FOR_REVIEW → Reviewer workflow.
