@@ -1,10 +1,15 @@
 # Changelog
 
+## 1.0.4 — 2026-07-25
+
+- Removed the legacy `/ai-arbitrate` command.
+- Kept `/ai-arbiter` as the single canonical Arbiter command.
+- Updated documentation, governance policy, and regression tests to enforce one arbitration command name.
+
 ## 1.0.3 — 2026-07-25
 
 - Added `/ai-arbiter` as the canonical command for the Arbiter role.
-- Kept `/ai-arbitrate` as a backward-compatible legacy alias.
-- Updated governance documentation and tests to prefer the role-aligned command name.
+- Added role-aligned arbitration naming across governance documentation and routing.
 
 ## 1.0.2 — 2026-07-25
 
