@@ -4,7 +4,7 @@ description: Use when planning, implementing, reviewing, migrating, testing, pac
 license: FSL-1.1-MIT
 metadata:
   author: Gianluca Iannotta
-  version: 1.0.2
+  version: 1.0.3
 ---
 
 # AI Engineering Governance
@@ -13,7 +13,7 @@ Use explicit role boundaries, project-local state, executable evidence, and cons
 
 ## Authority
 
-- **Architect:** owns codebase baseline, requirements, architecture, task plans, dependencies, migrations, test strategy, deployment scope, maintainability boundaries, and technical decisions.
+- **Architect:** owns codebase baseline, requirements, architecture, task plans, dependencies, migrations, test strategy, deployment scope, and technical decisions.
 - **Executor:** implements only Architect-approved work and verifies it.
 - **Reviewer:** independently challenges milestone and release completion claims.
 - **Arbiter:** resolves material Architect/Executor disagreement when normal replanning cannot safely settle it.
@@ -36,7 +36,7 @@ The baseline must cover, as applicable:
 - tests and observable coverage gaps;
 - deployment boundary;
 - plaintext secret exposure and tracked sensitive files;
-- defects, regression risks, architecture constraints, and maintainability risks relevant to future work.
+- defects, regression risks, and architecture constraints relevant to future work.
 
 Generated outputs, dependency vendor trees, build caches, and other non-source artifacts may be classified rather than exhaustively read, but all authored source and configuration that can affect behavior must be accounted for.
 
@@ -56,7 +56,7 @@ The Architect may maintain a roadmap in advance, but before every task is handed
 4. define exact scope and out-of-scope boundaries;
 5. define slices and acceptance criteria;
 6. identify regression surface and required tests;
-7. identify migration, external-integration, security, secret, deployment, and maintainability impact;
+7. identify migration, external-integration, security, secret, and deployment impact;
 8. set the task state to `READY_FOR_EXECUTION`.
 
 The Executor must never implement an unplanned task.
@@ -67,7 +67,7 @@ When implementation evidence materially conflicts with the approved plan, the Ar
 
 Use `ARBITRATION_REQUIRED` when there is an unresolved material disagreement about feasibility, correctness, security, scope, architecture, migration safety, or acceptance evidence and neither side should unilaterally decide.
 
-The Architect records the disagreement and recommends invoking the configured Arbiter.
+The Architect records the disagreement and recommends invoking the configured Arbiter. The canonical command is `/ai-arbiter`; `/ai-arbitrate` remains a compatibility alias.
 
 The Arbiter must independently inspect the plan, implementation evidence, repository state, and relevant requirements. Arbitration is recorded under `.ai/arbitration/`.
 
@@ -209,7 +209,6 @@ A final release requires:
 
 - required tests;
 - applicable build/static/security checks;
-- maintainability and source-structure review of changed production code;
 - plaintext secret scanning;
 - deployment-scope verification;
 - clean installation;
