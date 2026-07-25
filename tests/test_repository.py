@@ -19,14 +19,14 @@ class RepositoryTests(unittest.TestCase):
     def test_marketplace_manifest(self):
         data = json.loads(self.read("marketplace.json"))
         self.assertEqual(data["name"], "ai-engineering-governance")
-        self.assertEqual(data["plugins"][0]["version"], "1.0.1")
+        self.assertEqual(data["plugins"][0]["version"], "1.0.2")
         self.assertEqual(data["plugins"][0]["source"], "./plugins/ai-engineering-governance")
         self.assertNotIn("pluginRoot", data)
 
     def test_plugin_manifest(self):
         data = json.loads(self.plugin_read(".zcode-plugin/plugin.json"))
         self.assertEqual(data["name"], "ai-engineering-governance")
-        self.assertEqual(data["version"], "1.0.1")
+        self.assertEqual(data["version"], "1.0.2")
         self.assertEqual(data["license"], "FSL-1.1-MIT")
         self.assertEqual(data["author"]["name"], "Gianluca Iannotta")
 
@@ -59,7 +59,7 @@ class RepositoryTests(unittest.TestCase):
 
     def test_manifest_versions_are_current(self):
         skill = self.plugin_read("skills/ai-engineering-governance/SKILL.md")
-        self.assertIn("version: 1.0.1", skill)
+        self.assertIn("version: 1.0.2", skill)
         self.assertNotIn("v3", self.read("README.md").lower())
 
     def test_project_state_has_audit_baseline_deployment_and_arbitration(self):
@@ -89,6 +89,19 @@ class RepositoryTests(unittest.TestCase):
             "arbitration_required",
         ):
             self.assertIn(token, skill)
+
+    def test_maintainable_source_structure_policy(self):
+        skill = self.plugin_read("skills/ai-engineering-governance/SKILL.md").lower()
+        architect = self.plugin_read("agents/architect.md").lower()
+        executor = self.plugin_read("agents/executor.md").lower()
+        reviewer = self.plugin_read("agents/reviewer.md").lower()
+        for token in ("maintainable source structure", "god files", "micro-files", "cohesive", "line-count"):
+            self.assertIn(token, skill)
+        self.assertIn("targeted split", architect)
+        self.assertIn("god files", architect)
+        self.assertIn("micro-file", executor)
+        self.assertIn("maintainability", reviewer)
+        self.assertIn("line-count", reviewer)
 
     def test_architect_is_adversarial_and_task_gated(self):
         text = self.plugin_read("agents/architect.md").lower()
