@@ -14,7 +14,8 @@ class RepositoryTests(unittest.TestCase):
         data = json.loads((ROOT / "marketplace.json").read_text(encoding="utf-8"))
         self.assertEqual(data["name"], "ai-engineering-governance")
         self.assertEqual(data["plugins"][0]["version"], "1.0.0")
-        self.assertEqual(data["plugins"][0]["source"], "./ai-engineering-governance")
+        self.assertEqual(data["plugins"][0]["source"], "./plugins/ai-engineering-governance")
+        self.assertNotIn("pluginRoot", data)
 
     def test_plugin_manifest(self):
         data = json.loads((PLUGIN / ".zcode-plugin" / "plugin.json").read_text(encoding="utf-8"))
