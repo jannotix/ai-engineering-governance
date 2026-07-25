@@ -44,6 +44,188 @@ The plugin inspects the current workspace and creates the project-local `.ai/` s
 
 The `.ai/` directory belongs to the project and should normally be committed with the source code. It stores project-specific architecture, requirements, milestones, evidence, decisions, reviews, and release state. The governance method itself remains in this plugin.
 
+Then run `/ai-setup` and record the models or review mode you want to use for the three roles.
+
+Example:
+
+```text
+Architect: your preferred architecture/reasoning model
+Executor: your preferred coding model
+Reviewer: your preferred review model or external reviewer
+Reviewer mode: INTERNAL or EXTERNAL
+```
+
+## Typical workflow
+
+### 1. Initialize the project
+
+```text
+/ai-init
+/ai-setup
+```
+
+The plugin creates or validates `.ai/`, identifies whether the project is greenfield or an existing installation, and records the configured role bindings.
+
+### 2. Architecture and planning
+
+Select the model configured for the **Architect** role in the ZCode model picker, then run:
+
+```text
+/ai-architect
+```
+
+or invoke the plugin subagent directly:
+
+```text
+@ai-engineering-governance:architect
+```
+
+The Architect is responsible for:
+
+```text
+requirements
+    ↓
+architecture
+    ↓
+roadmap
+    ↓
+milestones
+    ↓
+tasks
+    ↓
+small verifiable slices
+    ↓
+acceptance criteria
+    ↓
+test and migration strategy
+```
+
+The Architect does not perform normal feature implementation.
+
+### 3. Implementation
+
+When an approved slice is ready, select the model configured for the **Executor** role, then run:
+
+```text
+/ai-execute
+```
+
+or:
+
+```text
+@ai-engineering-governance:executor
+```
+
+The Executor implements only the approved slice and must leave the project in a working state.
+
+```text
+approved slice
+    ↓
+implementation
+    ↓
+focused tests
+    ↓
+regression verification
+    ↓
+local runtime verification
+    ↓
+evidence
+```
+
+If the Executor discovers an architectural problem, it must stop and raise an architecture blocker instead of redesigning the system independently.
+
+### 4. Milestone review
+
+When the milestone is complete, review it independently.
+
+For an **internal reviewer**, select the configured Reviewer model and run:
+
+```text
+/ai-review
+```
+
+or:
+
+```text
+@ai-engineering-governance:reviewer
+```
+
+For an **external reviewer**, run:
+
+```text
+/ai-review
+```
+
+The plugin prepares the review handoff and marks the project ready for external review. Run the external reviewer against the same repository and `.ai/` state, then record the resulting review artifact in the project.
+
+The reviewer must treat previous implementation reports as claims, not proof.
+
+### 5. Continue the project
+
+For normal daily use, run:
+
+```text
+/ai-start
+```
+
+The command reads `.ai/STATUS.md` and routes the next governed action according to the current state.
+
+### 6. Final release
+
+When all milestones are complete, run:
+
+```text
+/ai-release
+```
+
+The release workflow verifies, where applicable:
+
+```text
+requirements
+    ↓
+full test and quality gates
+    ↓
+existing-install migrations
+    ↓
+clean installation from zero
+    ↓
+external integrations
+    ↓
+security verification
+    ↓
+final package
+    ↓
+package extraction and reinstall
+    ↓
+adversarial release review
+    ↓
+READY_FOR_PRODUCTION
+or
+NOT_READY_FOR_PRODUCTION
+```
+
+## Important: role binding does not switch models automatically
+
+`/ai-setup` records which model you intend to use for each role. It does **not** change the active ZCode model automatically.
+
+Before invoking a role, select its configured model in the ZCode model picker:
+
+```text
+Select Architect model
+    ↓
+/ai-architect
+    ↓
+Select Executor model
+    ↓
+/ai-execute
+    ↓
+Select Reviewer model or use external review
+    ↓
+/ai-review
+```
+
+Plugin subagents currently use **Inherit**, so they inherit the active ZCode model. This is intentional and keeps the plugin provider-neutral.
+
 ## Commands
 
 | Command | Purpose |
