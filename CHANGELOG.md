@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.3 — 2026-07-25
+
+- Added `/ai-arbiter` as the canonical command for the Arbiter role.
+- Kept `/ai-arbitrate` as a backward-compatible legacy alias.
+- Updated governance documentation and tests to prefer the role-aligned command name.
+
 ## 1.0.2 — 2026-07-25
 
 - Added maintainable source-structure governance for production code.
@@ -14,7 +20,7 @@
 - Added append-only project history and governed role/action audit trail.
 - Added mandatory initial adversarial complete-codebase baseline.
 - Added Architect approval before every Executor task.
-- Added optional Arbiter role and `/ai-arbitrate` for material plan/implementation disagreements.
+- Added optional Arbiter role and arbitration workflow for material plan/implementation disagreements.
 - Added local commit requirement for every validated task.
 - Added explicit no-push-by-default policy.
 - Added plaintext-secret exclusion and mandatory Architect/Reviewer secret checks.
