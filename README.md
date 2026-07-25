@@ -22,6 +22,7 @@ The plugin does not require a specific model or provider.
 - Architect and Reviewer always check for plaintext secret exposure.
 - Development workspace separated from the production deployment scope.
 - Tests, development documentation, governance, and evidence excluded from production packages by default.
+- Production source kept focused, cohesive, and maintainable without arbitrary line-count rules.
 - Independent milestone and release review.
 - Optional independent arbitration when planning and implementation materially disagree.
 - Clean-install and existing-install migration verification.
@@ -97,6 +98,8 @@ security and plaintext-secret check
     ↓
 deployment boundary
     ↓
+maintainability and module-boundary analysis
+    ↓
 CODEBASE_BASELINE.md
 ```
 
@@ -118,6 +121,8 @@ acceptance criteria
 tests / regressions / migrations
     ↓
 security / secrets / deployment impact
+    ↓
+maintainability impact
     ↓
 READY_FOR_EXECUTION
 ```
@@ -150,7 +155,7 @@ NO PUSH
 
 The Architect then plans or re-authorizes the next task.
 
-### Arbitration
+## Arbitration
 
 When Executor evidence materially conflicts with the approved plan, the Executor stops and returns the evidence to the Architect.
 
@@ -160,19 +165,21 @@ If normal replanning cannot safely resolve the disagreement, the Architect sets:
 ARBITRATION_REQUIRED
 ```
 
-Then run:
+Then run the canonical command:
 
 ```text
-/ai-arbitrate
+/ai-arbiter
 ```
 
 For an internal Arbiter, select its configured model first.
 
-For an external Arbiter, `/ai-arbitrate` prepares the handoff under `.ai/arbitration/`.
+For an external Arbiter, `/ai-arbiter` prepares the handoff under `.ai/arbitration/`.
 
 The Arbiter is independent. Neither Architect nor Executor automatically wins the disagreement.
 
-### Milestone review
+`/ai-arbitrate` remains available as a backward-compatible legacy alias, but new workflows should use `/ai-arbiter`.
+
+## Milestone review
 
 For an internal Reviewer:
 
@@ -182,9 +189,9 @@ For an internal Reviewer:
 
 For an external Reviewer, the command prepares the handoff and the external reviewer inspects the same repository and `.ai/` state.
 
-The Reviewer always checks security, plaintext secrets, migrations, tests, runtime evidence, and deployment-scope correctness.
+The Reviewer always checks security, plaintext secrets, migrations, tests, runtime evidence, deployment-scope correctness, and maintainability risks.
 
-### Continue later
+## Continue later
 
 When reopening a governed project:
 
@@ -202,7 +209,7 @@ Use:
 
 to see current task, latest history event, Git state, blockers, arbitration, local commit state, and the exact next action.
 
-### Final release
+## Final release
 
 Run:
 
@@ -266,6 +273,18 @@ If a secret is already tracked, adding it to ignore rules is not enough. It must
 
 Prefer runtime environment variables, secret managers, or encrypted secret stores.
 
+## Maintainable source structure
+
+Production source should remain understandable and maintainable over time.
+
+Prefer focused files and modules with one clear responsibility or one tightly cohesive concern. Avoid monolithic god files that accumulate unrelated responsibilities.
+
+When a task would materially worsen an oversized or low-cohesion file, the Architect should plan a targeted extraction or split inside the task scope.
+
+Do not split code by arbitrary line-count thresholds. Avoid artificial micro-files, wrapper-only abstractions, and unnecessary indirection.
+
+The goal is high cohesion, narrow interfaces, good testability, and files that can be changed without understanding unrelated implementation details.
+
 ## Development workspace and production codebase
 
 The repository is the development workspace.
@@ -287,7 +306,8 @@ Production packages contain only runtime-required files.
 | `/ai-status` | Show state, history, Git status, blockers, and next action |
 | `/ai-architect` | Baseline the codebase and plan/re-authorize the next task |
 | `/ai-execute` | Implement and validate approved work, then create the local task commit |
-| `/ai-arbitrate` | Resolve or hand off a material Architect/Executor disagreement |
+| `/ai-arbiter` | Canonical Arbiter command for material Architect/Executor disagreement |
+| `/ai-arbitrate` | Backward-compatible legacy alias for `/ai-arbiter` |
 | `/ai-review` | Independently review a completed milestone |
 | `/ai-start` | Continue from current governed state |
 | `/ai-release` | Run final production-readiness workflow |
