@@ -1,10 +1,10 @@
 ---
 name: ai-engineering-governance
-description: Use when planning, implementing, reviewing, migrating, testing, packaging, or releasing software that should remain verifiable, minimally designed, locally testable, auditable, and production-gated.
+description: Use when planning, implementing, reviewing, migrating, testing, packaging, or releasing software that should remain verifiable, minimally designed, locally testable, auditable, maintainable, and production-gated.
 license: FSL-1.1-MIT
 metadata:
   author: Gianluca Iannotta
-  version: 1.0.1
+  version: 1.0.2
 ---
 
 # AI Engineering Governance
@@ -13,7 +13,7 @@ Use explicit role boundaries, project-local state, executable evidence, and cons
 
 ## Authority
 
-- **Architect:** owns codebase baseline, requirements, architecture, task plans, dependencies, migrations, test strategy, deployment scope, and technical decisions.
+- **Architect:** owns codebase baseline, requirements, architecture, task plans, dependencies, migrations, test strategy, deployment scope, maintainability boundaries, and technical decisions.
 - **Executor:** implements only Architect-approved work and verifies it.
 - **Reviewer:** independently challenges milestone and release completion claims.
 - **Arbiter:** resolves material Architect/Executor disagreement when normal replanning cannot safely settle it.
@@ -36,7 +36,7 @@ The baseline must cover, as applicable:
 - tests and observable coverage gaps;
 - deployment boundary;
 - plaintext secret exposure and tracked sensitive files;
-- defects, regression risks, and architecture constraints relevant to future work.
+- defects, regression risks, architecture constraints, and maintainability risks relevant to future work.
 
 Generated outputs, dependency vendor trees, build caches, and other non-source artifacts may be classified rather than exhaustively read, but all authored source and configuration that can affect behavior must be accounted for.
 
@@ -56,7 +56,7 @@ The Architect may maintain a roadmap in advance, but before every task is handed
 4. define exact scope and out-of-scope boundaries;
 5. define slices and acceptance criteria;
 6. identify regression surface and required tests;
-7. identify migration, external-integration, security, secret, and deployment impact;
+7. identify migration, external-integration, security, secret, deployment, and maintainability impact;
 8. set the task state to `READY_FOR_EXECUTION`.
 
 The Executor must never implement an unplanned task.
@@ -107,6 +107,21 @@ Do not rewrite or delete prior history entries to make the project appear cleane
 - Avoid speculative abstractions and future-proofing without a current requirement.
 - Keep comments minimal, in English, and limited to non-obvious intent.
 - Never add narrative comments about phases, agents, or implementation history.
+
+## Maintainable source structure
+
+Production source must remain understandable and maintainable over time.
+
+- Prefer focused files and modules with one clear responsibility or one tightly cohesive concern.
+- Do not create or extend monolithic god files that accumulate unrelated responsibilities, orchestration, persistence, validation, transport, and domain logic without a justified boundary.
+- When an approved change would make an existing file materially harder to understand, test, review, or change in isolation, the Architect must include a targeted split or extraction in the task plan.
+- Split by responsibility and stable domain or technical boundaries, not by arbitrary line-count targets.
+- Do not create artificial micro-files, wrapper-only abstractions, one-use interfaces, or fragmentation that increases navigation and indirection without improving cohesion or testability.
+- Prefer small cohesive functions, classes, components, modules, and files whose purpose can be understood without reading unrelated implementation details.
+- Keep public interfaces narrow and explicit. Internal implementation may change without forcing unrelated consumers to change.
+- Preserve existing repository conventions where they are maintainable; do not perform unrelated repository-wide refactors merely to satisfy a stylistic preference.
+- New files and touched files are subject to this policy. Legacy oversized files outside task scope should be recorded as follow-up risk unless they materially block safe implementation.
+- The Reviewer must treat unjustified monolithic growth or needless fragmentation as a maintainability finding and make it blocking when it creates material correctness, testing, security, or change-risk concerns.
 
 ## Secret safety
 
@@ -194,6 +209,7 @@ A final release requires:
 
 - required tests;
 - applicable build/static/security checks;
+- maintainability and source-structure review of changed production code;
 - plaintext secret scanning;
 - deployment-scope verification;
 - clean installation;
