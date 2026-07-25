@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.2 — 2026-07-25
+
+- Added maintainable source-structure governance for production code.
+- Added Architect responsibility for identifying monolithic or multi-responsibility files during baseline and task planning.
+- Added targeted extraction requirements when a task would materially worsen an oversized or low-cohesion file.
+- Added Executor rules to keep changed production files and modules focused, cohesive, and testable.
+- Added Reviewer checks for god files, oversized responsibility boundaries, coupling, narrow interfaces, and testability.
+- Explicitly rejected arbitrary line-count limits and artificial micro-file fragmentation.
+
 ## 1.0.1 — 2026-07-25
 
 - Added append-only project history and governed role/action audit trail.
