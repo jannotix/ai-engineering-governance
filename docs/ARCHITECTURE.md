@@ -14,16 +14,50 @@ marketplace.json
 
 ## Separation of concerns
 
-The plugin owns reusable engineering policy, role system prompts, commands, and canonical state contracts.
+The plugin owns reusable engineering policy, role prompts, commands, verification semantics, and canonical state contracts.
 
-Each governed repository owns only project-specific `.ai/` state: requirements, architecture decisions, roadmap, milestones, status, evidence, migration state, reviews, and release readiness.
+Governed repositories own only project-specific `.ai/` state. Reusable baseline/context state is kept separate from task-local requirement, plan, evidence, and review artifacts.
+
+```text
+.ai/
+├── CODEBASE_BASELINE.md
+├── CONTEXT_INDEX.md
+├── DEPLOYMENT_SCOPE.md
+├── PROJECT_HISTORY.md
+└── tasks/<TASK-ID>/
+    ├── requirement provenance
+    ├── context manifest
+    ├── task plan
+    ├── verification profile
+    ├── run state
+    ├── evidence/
+    └── reviews/
+```
 
 ## Model neutrality
 
-No provider or model identifier is hard-coded.
+No provider or model identifier is hard-coded. Plugin subagents inherit the model selected by the user. Project role bindings are governance configuration only; ZCode model selection remains under user control.
 
-Plugin subagents inherit the model selected by the user. Project role bindings are recorded for governance and human clarity. ZCode model selection remains under user control.
+## Adaptive review
 
-## Reviewer independence
+Normal tasks use one independent implementation Reviewer.
 
-The reviewer may be an internal ZCode model or an external reviewer. External review is represented as a governed handoff; the plugin never impersonates a reviewer that has not executed the review.
+ELEVATED risk/milestone/release review uses two independent advisory views over the same frozen target:
+
+```text
+Reviewer
++
+Architecture/Security Reviewer
+        ↓
+Final Reviewer
+```
+
+The two advisory reviewers do not consume sibling current-cycle findings before their reports complete. Final Reviewer independently validates requirement provenance, plan/risk authorization, primary evidence, and reviewer allegations.
+
+Arbiter is not part of normal review. It is reserved for unresolved Architect/Executor disagreement before validation.
+
+## Command minimalism
+
+The plugin intentionally does not duplicate ZCode-native planning, goal/session continuation, usage statistics, or task-management surfaces with additional slash commands.
+
+`/ai-start` performs governance-state reconciliation; `/ai-review` routes STANDARD/ELEVATED review; evidence and Operational Assurance are contracts inside existing task workflow rather than separate commands.
