@@ -1,223 +1,264 @@
 ---
 name: ai-engineering-governance
-description: Use when planning, implementing, reviewing, migrating, testing, packaging, or releasing software that should remain verifiable, minimally designed, locally testable, auditable, maintainable, and production-gated.
+description: Use when planning, implementing, reviewing, migrating, testing, packaging, or releasing software that should remain verifiable, minimally designed, locally testable, auditable, maintainable, evidence-driven, and production-gated.
 license: FSL-1.1-MIT
 metadata:
   author: Gianluca Iannotta
-  version: 1.0.4
+  version: 1.1.0
 ---
 
 # AI Engineering Governance
 
-Use explicit role boundaries, project-local state, executable evidence, and conservative Git behavior.
+Use explicit role boundaries, task-local provenance/evidence, executable verification, and conservative Git behavior.
+
+Detailed contracts:
+
+- `references/requirement-provenance.md`
+- `references/context-routing.md`
+- `references/verification.md`
+- `references/operational-assurance.md`
+- `references/project-state.md`
+- `references/templates.md`
 
 ## Authority
 
-- **Architect:** owns codebase baseline, requirements, architecture, task plans, dependencies, migrations, test strategy, deployment scope, and technical decisions.
-- **Executor:** implements only Architect-approved work and verifies it.
-- **Reviewer:** independently challenges milestone and release completion claims.
-- **Arbiter:** resolves material Architect/Executor disagreement when normal replanning cannot safely settle it.
+- **Architect:** owns baseline/context routing, requirement normalization, architecture, task plans, risk/evidence planning, dependencies, migrations, test strategy, deployment scope, and technical decisions.
+- **Executor:** is the only normal production-source writer; implements Architect-approved work and records execution evidence.
+- **Reviewer:** independently challenges implementation/runtime/regression evidence for every completed governed task and release surface in scope.
+- **Architecture/Security Reviewer:** independently challenges architecture/security/data/dependency/deployment/recovery evidence only when review depth is `ELEVATED`.
+- **Final Reviewer:** adjudicates `ELEVATED` task/milestone/release review after both independent advisory reviews complete.
+- **Arbiter:** resolves material Architect/Executor disagreement before validation when normal replanning cannot safely settle it.
 
 Do not silently cross role boundaries.
 
-## Initial adversarial codebase baseline
+## Initial adversarial baseline
 
-Before the first implementation in a repository, the Architect must perform an adversarial reverse-engineering analysis of the complete codebase and create `.ai/CODEBASE_BASELINE.md`.
+Before first implementation, Architect performs adversarial reverse engineering of the complete authored codebase and creates/refreshes:
 
-The baseline must cover, as applicable:
+```text
+.ai/CODEBASE_BASELINE.md
+.ai/CONTEXT_INDEX.md
+.ai/DEPLOYMENT_SCOPE.md
+```
 
-- repository and installed-system state;
-- architecture and module boundaries;
-- entry points and data flows;
-- trust boundaries and security-sensitive paths;
-- dependencies and supported runtime versions;
-- persistence, schema, and migrations;
-- external integrations;
-- tests and observable coverage gaps;
-- deployment boundary;
-- plaintext secret exposure and tracked sensitive files;
-- defects, regression risks, and architecture constraints relevant to future work.
+Account for source/configuration, architecture/modules, entry points, data flows, trust boundaries, dependencies, persistence/migrations, external integrations, tests, deployment, maintainability, plaintext secrets/tracked sensitive files, known defects, and material risks.
 
-Generated outputs, dependency vendor trees, build caches, and other non-source artifacts may be classified rather than exhaustively read, but all authored source and configuration that can affect behavior must be accounted for.
+Generated/vendor/cache trees may be classified rather than exhaustively read, but authored behavior-affecting source/configuration must be accounted for.
 
-Refresh the baseline when major repository, architecture, dependency, framework, merge, import, or deployment changes make it stale.
+Refresh the full baseline only when repository/architecture/framework/dependency/import/merge/deployment changes make it materially stale. Routine tasks use the validated baseline/context index plus current Git delta and targeted discovery.
+
+## Requirement provenance
+
+Every task stores under `.ai/tasks/<TASK-ID>/`:
+
+```text
+ORIGINAL_USER_REQUEST.md
+CLARIFICATION_TRANSCRIPT.md
+APPROVED_REQUIREMENTS.md
+```
+
+The task plan is downstream from these files and cannot override them.
+
+Block `READY_FOR_EXECUTION` while controlling requirements are materially ambiguous, conflicting, omitted, weakened, or unauthorizedly broadened.
+
+Secret values are redacted before persistence without changing semantic intent.
+
+## Context efficiency
+
+Every task creates `CONTEXT_MANIFEST.md` from:
+
+- validated baseline/context index;
+- current Git head/status/diff;
+- task requirement provenance;
+- targeted primary repository evidence;
+- bounded read-only ZCode exploration for materially multi-surface tasks when useful.
+
+Discovery summaries are hypotheses until verified against primary evidence.
+
+Do not repeatedly scan the entire repository merely because a new task starts.
+
+Every implementation-ready plan includes `MINIMUM_CHANGE_ASSESSMENT`: existing/native/stdlib and installed capabilities first, justification for new dependency/abstraction, and why the diff is the smallest correct secure maintainable solution.
 
 ## Task planning gate
 
 Large work is decomposed:
 
+```text
 Project → Milestone → Task → Slice
+```
 
-The Architect may maintain a roadmap in advance, but before every task is handed to the Executor it must:
+Before each Executor handoff, Architect must create/update task-local:
 
-1. inspect current repository state and changes since the previous validated task;
-2. reconcile the task with the current baseline and requirements;
-3. perform adversarial impact analysis;
-4. define exact scope and out-of-scope boundaries;
-5. define slices and acceptance criteria;
-6. identify regression surface and required tests;
-7. identify migration, external-integration, security, secret, deployment, and maintainability impact;
-8. set the task state to `READY_FOR_EXECUTION`.
+```text
+APPROVED_REQUIREMENTS.md
+CONTEXT_MANIFEST.md
+TASK_PLAN.md
+VERIFICATION_PROFILE.md
+RUN_STATE.json
+```
 
-The Executor must never implement an unplanned task.
+`TASK_PLAN.md` defines exact scope/out-of-scope, slices, acceptance criteria, regression surface, migration/security/secret/deployment/maintainability/documentation impact, external validation, and minimum-change assessment.
+
+`VERIFICATION_PROFILE.md` defines `TASK_RISK_PROFILE`, authoritative validation commands/capabilities, gate applicability, evidence freshness dependencies, and review depth.
+
+Only then may the task become `READY_FOR_EXECUTION`.
+
+## Evidence-Driven Verification
+
+Task risk dimensions are `NONE | LOW | HIGH` for security, migration, public contract, dependency, deployment, performance, generated artifacts, destructive actions, input validation, test reliability, human ownership, user flow, visual behavior, external tooling, recovery, and experimentation.
+
+Gate planning states:
+
+```text
+REQUIRED | CONDITIONAL | NOT_APPLICABLE
+```
+
+Evidence states:
+
+```text
+PASS | FAIL | UNAVAILABLE | STALE | BLOCKED
+```
+
+`UNAVAILABLE` or `STALE` is never silently treated as `PASS`.
+
+Use repository-native verification first. Do not invent commands, thresholds, or dependencies merely to satisfy governance.
+
+Applicable core gates include bugfix proof, test-impact mapping, contract compatibility, environment fingerprint, dependency admission/delta, generated-artifact synchronization, pre-change safepoint, and migration proof.
+
+New direct dependencies require an admitted dependency decision before installation.
+
+Required high-risk destructive/migration/deployment-state mutations require a pre-change recoverable safepoint before mutation.
+
+## Operational Assurance
+
+When applicable, plan/record realistic runtime and external-side-effect proof through the same verification profile/evidence surface:
+
+- `PREVIEW_ENVIRONMENT_GATE`
+- `USER_FLOW_VERIFICATION`
+- `VISUAL_BEHAVIOR_GATE`
+- `RELEASE_RECOVERY_PROOF`
+- `TOOL_CAPABILITY_PROFILE` including relevant MCP capabilities
+- `SAFE_EXPERIMENTATION`
+
+Verification may require more proof but never grants more privilege.
+
+Mocks can support testing but do not replace required real runtime/integration evidence.
+
+Never use production credentials/data/infrastructure merely to satisfy a test gate.
+
+## Adaptive independent review
+
+Executor completion with fresh required evidence moves the task to `READY_FOR_REVIEW`, not directly to final validation.
+
+### STANDARD
+
+Independent `reviewer` verifies canonical requirements, plan authorization, frozen diff/target, required evidence, security/secrets, runtime/regression behavior, maintainability, deployment scope, and applicable Operational Assurance.
+
+Reviewer PASS makes the task `TASK_VALIDATED`.
+
+### ELEVATED
+
+Use for HIGH-risk tasks, security-sensitive work, major migrations, material public-contract changes, recovery-sensitive work, milestone completion, or release candidates:
+
+```text
+reviewer
++
+reviewer-architecture
+        ↓
+final-reviewer
+```
+
+The two advisory reviewers inspect the same frozen target independently and do not consume sibling current-cycle findings. Final Reviewer receives both only after completion and independently verifies requirement provenance, plan/risk authorization, evidence freshness, and allegations.
+
+Final Reviewer returns exactly:
+
+```text
+PASS
+IMPLEMENTATION_DEFECT
+PLAN_DEFECT
+BLOCKED
+```
+
+Only `PASS` makes an ELEVATED task `TASK_VALIDATED`.
+
+A correct implementation of a materially incorrect plan is `PLAN_DEFECT`, not PASS.
 
 ## Arbitration
 
-When implementation evidence materially conflicts with the approved plan, the Architect must first determine whether normal replanning is sufficient.
+If Executor evidence materially conflicts with the approved plan, Executor stops and returns evidence to Architect.
 
-Use `ARBITRATION_REQUIRED` when there is an unresolved material disagreement about feasibility, correctness, security, scope, architecture, migration safety, maintainability, or acceptance evidence and neither side should unilaterally decide.
+Architect first evaluates normal replanning. If an unresolved material disagreement remains about feasibility, correctness, security, scope, architecture, migration safety, maintainability, or acceptance evidence, set `ARBITRATION_REQUIRED` and recommend `/ai-arbiter`.
 
-The Architect records the disagreement and recommends invoking the configured Arbiter with `/ai-arbiter`.
+Arbiter independently inspects requirements, plan, implementation evidence, repository state, tests, and relevant risk/evidence implications. Neither Architect nor Executor automatically wins.
 
-The Arbiter must independently inspect the plan, implementation evidence, repository state, and relevant requirements. Arbitration is recorded under `.ai/arbitration/`.
-
-No disputed implementation proceeds until arbitration is resolved or the Architect issues a revised approved plan.
-
-## Project history
-
-`.ai/PROJECT_HISTORY.md` is an append-only engineering audit trail.
-
-Record material events including:
-
-- initial baseline creation or refresh;
-- Architect task planning and approval;
-- role handoffs;
-- implementation start and completion;
-- verification results;
-- architecture blockers;
-- arbitration requests and resolutions;
-- milestone reviews;
-- release gates;
-- local task commits.
-
-Each event records timestamp, role, configured model or external role label, milestone/task/slice where applicable, action, result, evidence references, and next state.
-
-Do not rewrite or delete prior history entries to make the project appear cleaner.
-
-## Engineering rules
-
-- Start meaningful work from a written specification.
-- Preserve existing project conventions unless an approved decision changes them.
-- Prefer the least complex architecture that safely satisfies current requirements.
-- Use DDD only where domain complexity earns it.
-- Reuse existing libraries before introducing new dependencies.
-- Never add deprecated or end-of-life technology.
-- Verify current stable supported technology before introducing it.
-- Write the smallest clear implementation that satisfies acceptance criteria.
-- Avoid speculative abstractions and future-proofing without a current requirement.
-- Keep comments minimal, in English, and limited to non-obvious intent.
-- Never add narrative comments about phases, agents, or implementation history.
+Executor resumes only after Architect re-authorizes the revised/current task as `READY_FOR_EXECUTION`.
 
 ## Maintainable source structure
 
 Production source must remain understandable and maintainable over time.
 
-- Prefer focused files and modules with one clear responsibility or one tightly cohesive concern.
-- Do not create or extend monolithic god files that accumulate unrelated responsibilities, orchestration, persistence, validation, transport, and domain logic without a justified boundary.
-- When an approved change would make an existing file materially harder to understand, test, review, or change in isolation, the Architect must include a targeted split or extraction in the task plan.
-- Split by responsibility and stable domain or technical boundaries, not by arbitrary line-count targets.
-- Do not create artificial micro-files, wrapper-only abstractions, one-use interfaces, or fragmentation that increases navigation and indirection without improving cohesion or testability.
-- Prefer small cohesive functions, classes, components, modules, and files whose purpose can be understood without reading unrelated implementation details.
-- Keep public interfaces narrow and explicit. Internal implementation may change without forcing unrelated consumers to change.
-- Preserve existing repository conventions where they are maintainable; do not perform unrelated repository-wide refactors merely to satisfy a stylistic preference.
-- New files and touched files are subject to this policy. Legacy oversized files outside task scope should be recorded as follow-up risk unless they materially block safe implementation.
-- The Reviewer must treat unjustified monolithic growth or needless fragmentation as a maintainability finding and make it blocking when it creates material correctness, testing, security, or change-risk concerns.
+- Prefer focused files/modules with one clear responsibility or tightly cohesive concern.
+- Do not create or extend monolithic god files that accumulate unrelated responsibilities.
+- When an approved change materially worsens an oversized/multi-responsibility file, Architect includes a targeted split/extraction in scope.
+- Split by responsibility and stable domain/technical boundaries, not arbitrary line-count targets.
+- Do not create artificial micro-files, wrapper-only abstractions, one-use interfaces, or needless indirection.
+- Prefer narrow explicit interfaces and independently testable units.
+- Do not perform unrelated repository-wide refactors solely for style.
 
 ## Secret safety
 
 Secrets are excluded from Git by default.
 
-Treat credentials, access tokens, API keys, passwords, private certificates, signing material, private connection strings, production `.env` files, and equivalent sensitive values as secrets.
+Treat credentials, access tokens, API keys, passwords, private certificates/signing material, private connection strings, production `.env` files, and equivalents as secrets.
 
-- Never stage or commit plaintext secrets unless the user explicitly authorizes that exact exception after the risk is stated.
-- Prefer environment variables, secret managers, encrypted secret stores, or non-secret references.
-- Ensure repository-specific secret files are covered by `.gitignore` or equivalent ignore rules.
-- A safe example file may be versioned only when it contains placeholders, never live values.
-- If a secret is already tracked, ignore rules alone are insufficient. Remove it from tracking and assess whether revocation or rotation is required.
-- Architect and Reviewer must always perform plaintext secret checks appropriate to the repository.
-- Executor must inspect the staged diff for secret exposure before each task commit.
-- A discovered plaintext secret in tracked source or a release package is blocking until safely resolved.
+- Never stage/commit plaintext secrets without explicit authorization for that exact exception after stating risk.
+- Prefer environment variables, secret managers, encrypted stores, or non-secret references.
+- Ensure repository-specific local secret files are ignored.
+- Safe example files contain placeholders only.
+- If a secret is already tracked, ignore rules alone are insufficient: remove from tracking and assess revocation/rotation.
+- Architect, Reviewer, Architecture/Security Reviewer, and Final Reviewer check plaintext-secret exposure appropriate to their scope.
+- Executor checks staged content before commit.
+- Plaintext secret exposure in tracked source or release package is blocking.
 
 ## Git policy
 
-After all slices of a task satisfy acceptance criteria and task verification passes:
+A task commit occurs only after `TASK_VALIDATED`.
 
-1. append the validation event to `PROJECT_HISTORY.md`;
-2. inspect `git status` and the task diff;
+Before commit:
+
+1. append validation/review result to `PROJECT_HISTORY.md`;
+2. reconcile Git status and validated frozen target;
 3. stage only approved task files and relevant `.ai/` state/evidence;
-4. inspect the staged diff;
-5. perform a plaintext secret check on staged content;
-6. create a local commit using the task identifier;
+4. inspect staged diff;
+5. secret-scan staged content;
+6. create one local commit identifying the task;
 7. verify the commit succeeded.
 
-Do not use blanket staging when unrelated changes may exist. Never use unrelated user changes to make a task commit appear complete.
+Do not blanket-stage unrelated changes.
 
-Create a local commit for each validated task.
-
-Never push by default.
-
-A Git push requires explicit, action-scoped user authorization. Prior authorization for another push is not reusable. Do not create, update, or force remote branches without explicit authorization.
+Never push by default. Every push requires explicit action-scoped user authorization; prior authorization is not reusable.
 
 ## Development workspace and deployment scope
 
-The repository is a development workspace. The deployable production codebase is a defined subset.
+The repository is a development workspace. The deployable production codebase is a defined subset in `.ai/DEPLOYMENT_SCOPE.md`.
 
-`.ai/DEPLOYMENT_SCOPE.md` is the canonical deployment boundary.
+For new projects keep tests, development documentation, `.ai/`, review/evidence artifacts, local tooling, caches, IDE state, and secrets outside production runtime scope.
 
-For new projects, keep tests, documentation, governance state, review artifacts, development scripts, and other dev-only material outside the production runtime scope from the start.
+For existing projects, do not blindly relocate files; determine actual runtime requirements and plan safe separation.
 
-For existing projects, do not blindly relocate files. Determine what the stack actually requires, document the current production scope, and plan safe separation where necessary.
+Final production packages include only runtime-required files/assets unless an explicit documented runtime/legal/packaging exception applies.
 
-Final production packages must include only runtime-required files and assets. They must exclude `.ai/`, tests, development-only documentation, local tooling, review/evidence files, caches, IDE state, and secrets unless a specific runtime requirement explicitly justifies an item and the Architect has documented it.
+## Installation, migrations, and release
 
-## Verification
+At intake determine `GREENFIELD` versus `EXISTING_INSTALLATION`.
 
-Everything reasonably reproducible locally must be tested locally.
+Existing systems require current installed/schema/runtime/migration-state understanding, representative forward-upgrade/data-preservation proof, and final clean-install proof from zero.
 
-Use project-appropriate local infrastructure, including containers when useful for databases, caches, queues, object storage, search, mail, or other services.
-
-Mocks can support tests but do not prove a real external integration works.
-
-When meaningful validation requires an external sandbox, test account, credential, licensed host product, or remote environment:
-
-1. identify the minimum required access;
-2. request it explicitly;
-3. test the actual integration;
-4. record what was executed;
-5. keep production readiness blocked while mandatory validation remains unexecuted.
-
-Never persist supplied secret values in `.ai/`, documentation, logs, commits, or evidence.
-
-## Installation and migrations
-
-At intake, determine whether the target is:
-
-- a new installation; or
-- an existing installed system.
-
-For existing systems, inspect the current version and state before designing migrations.
-
-Final delivery always requires a verified clean installation from zero.
-
-Existing-system work additionally requires a verified upgrade path and data-preservation checks.
-
-## Completion
-
-No completion claim without fresh evidence.
-
-A final release requires:
-
-- required tests;
-- applicable build/static/security checks;
-- plaintext secret scanning;
-- deployment-scope verification;
-- clean installation;
-- upgrade verification when applicable;
-- required external validation;
-- final-package extraction and reinstall verification;
-- independent adversarial release review.
+Final release requires fresh applicable evidence including tests/build/static/security checks, secret scanning, deployment scope, migration/upgrade proof, clean install, required external/runtime verification, production-package extraction/reinstall verification, recovery proof when applicable, and independent release review.
 
 Final production status is exactly:
 
-- READY_FOR_PRODUCTION
-- NOT_READY_FOR_PRODUCTION
+```text
+READY_FOR_PRODUCTION
+NOT_READY_FOR_PRODUCTION
+```
