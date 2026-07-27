@@ -1,27 +1,64 @@
 ---
-description: Independently review a completed milestone using adversarial verification, including plaintext secret and deployment-scope checks.
+description: Run the review depth required by the current task verification profile, from standard independent review to elevated dual review and final adjudication.
 skills: ai-engineering-governance
 ---
 
-Act strictly in the Reviewer role.
+Read the current task `APPROVED_REQUIREMENTS.md`, `TASK_PLAN.md`, `VERIFICATION_PROFILE.md`, `RUN_STATE.json`, frozen target, and `evidence/VERIFICATION_EVIDENCE.md`.
 
-Do not trust previous completion claims.
+Refuse review when the target is not frozen, task state is not `READY_FOR_REVIEW`/`VERIFYING`, or required evidence target identity cannot be reconciled with current Git state.
 
-Independently reconstruct milestone requirements and approved architecture, inspect actual source and changes, and run applicable verification.
+Never trust prior completion claims. Required `FAIL`, `STALE`, `BLOCKED`, or unresolved `UNAVAILABLE` evidence prevents PASS unless the profile contains a sufficient authoritative alternative.
 
-Always inspect tracked source and relevant release/staged material for plaintext secrets and unsafe sensitive files.
+## STANDARD review
 
-Verify `.ai/DEPLOYMENT_SCOPE.md` against actual packaging and runtime requirements.
+Invoke/use the configured independent `reviewer` only.
 
-Write the review to `.ai/reviews/` with concrete evidence and append the review event to `.ai/PROJECT_HISTORY.md`.
+The Reviewer independently verifies requirement provenance, plan authorization, actual source/diff, tests/runtime/regressions, risk/gate selection, evidence freshness, security/secrets, migrations/dependencies/contracts, Operational Assurance when applicable, deployment scope, and maintainability.
 
-Return exactly one milestone verdict:
+Controlling result:
 
-- PASS
-- PASS WITH NON-BLOCKING FINDINGS
-- FAIL — FIX REQUIRED
-- FAIL — ARCHITECTURE REASSESSMENT REQUIRED
+```text
+PASS
+IMPLEMENTATION_DEFECT
+PLAN_DEFECT
+BLOCKED
+```
 
-Plaintext secret exposure or material deployment-scope leakage is blocking.
+On PASS:
 
-If the configured Reviewer is external, do not impersonate it. Prepare a complete review handoff in `.ai/reviews/` and mark the project `READY_FOR_REVIEW`.
+- write task-local review evidence;
+- set `TASK_VALIDATED`;
+- update `RUN_STATE.json` with review complete;
+- append the review event to `.ai/PROJECT_HISTORY.md`;
+- route back to Executor for the required scoped local commit.
+
+## ELEVATED review
+
+Use only the existing roles, not additional slash commands:
+
+```text
+reviewer
++
+reviewer-architecture
+        ↓
+final-reviewer
+```
+
+The implementation Reviewer and Architecture/Security Reviewer inspect the same frozen target independently. Neither receives sibling current-cycle findings before completing its own report.
+
+Only after both advisory reports exist may `final-reviewer` independently validate the requirement trail, plan/risk authorization, evidence freshness/sufficiency, primary source, and both reviewer allegations.
+
+Final Reviewer returns exactly:
+
+```text
+PASS
+IMPLEMENTATION_DEFECT
+PLAN_DEFECT
+BLOCKED
+```
+
+Only PASS sets `TASK_VALIDATED` and routes to Executor for local commit.
+
+A materially defective plan is `PLAN_DEFECT` even when implementation follows it exactly.
+
+Do not edit production source during review. Do not push. External reviewer modes must produce complete task-local handoff packets rather than impersonating unavailable external roles.
