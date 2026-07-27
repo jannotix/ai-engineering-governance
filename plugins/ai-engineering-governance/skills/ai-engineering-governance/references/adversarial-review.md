@@ -1,25 +1,51 @@
 # Adversarial Review Protocol
 
-Reviewers start from source, requirements, architecture, tests, migrations, and executable evidence.
+Previous reports are claims, not proof. Reviewers start from canonical requirement provenance, approved plan, frozen source/documentation target, verification profile, executed evidence, and primary repository/runtime evidence.
 
-Previous reports are claims, not proof.
+## Frozen target
 
-## Milestone review
+Review must identify the exact Git/diff/artifact target. If that target changes, dependent evidence and review become stale and must be reconciled before reuse.
 
-Independently verify requirement coverage, architecture conformance, actual diff, dependency changes, test quality, runtime behavior, migration behavior, external integration evidence, security, and regression risk.
+## STANDARD review
 
-Allowed verdicts:
+The independent Implementation Reviewer verifies requirement interpretation, actual implementation, tests/regressions/runtime behavior, required evidence freshness, migrations/dependencies/contracts, security/secrets, deployment scope, Operational Assurance when applicable, and maintainability.
+
+Controlling result:
+
 - PASS
-- PASS WITH NON-BLOCKING FINDINGS
-- FAIL — FIX REQUIRED
-- FAIL — ARCHITECTURE REASSESSMENT REQUIRED
+- IMPLEMENTATION_DEFECT
+- PLAN_DEFECT
+- BLOCKED
 
-## Final release review
+A correct implementation of a materially incorrect plan is `PLAN_DEFECT`.
 
-Use independent passes where multiple reviewers are available.
+## ELEVATED review
 
-Each pass should reverse-engineer entry points and trust boundaries, challenge requirement coverage, inspect failure paths, test migration and installation assumptions, inspect dependencies, search for security defects and regressions, run applicable verification, and attempt to falsify important positive claims.
+Use for HIGH-risk work, security-sensitive changes, major migrations, material public-contract changes, recovery-sensitive work, milestone completion, and release candidates.
 
-Final verdict:
+The Implementation Reviewer and Architecture/Security Reviewer independently inspect the same frozen target and canonical task evidence. Neither reads sibling current-cycle findings before completing its own report.
+
+After both advisory reports complete, Final Reviewer independently validates:
+
+- original request and clarifications;
+- approved requirements and task plan;
+- risk classification and review depth;
+- evidence freshness/sufficiency;
+- primary implementation/runtime evidence;
+- both reviewer allegations.
+
+Final task adjudication:
+
+- PASS
+- IMPLEMENTATION_DEFECT
+- PLAN_DEFECT
+- BLOCKED
+
+Reviewer agreement alone is not proof.
+
+## Release
+
+Release review is always ELEVATED. Final production verdict is exactly:
+
 - READY_FOR_PRODUCTION
 - NOT_READY_FOR_PRODUCTION
