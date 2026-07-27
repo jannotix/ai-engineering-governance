@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / "plugins" / "ai-engineering-governance"
+SKILL_ROOT = PLUGIN / "skills" / "ai-engineering-governance"
 
 
 class RepositoryTests(unittest.TestCase):
@@ -16,17 +17,20 @@ class RepositoryTests(unittest.TestCase):
     def plugin_read(self, rel: str) -> str:
         return (PLUGIN / rel).read_text(encoding="utf-8")
 
+    def skill_read(self, rel: str) -> str:
+        return (SKILL_ROOT / rel).read_text(encoding="utf-8")
+
     def test_marketplace_manifest(self):
         data = json.loads(self.read("marketplace.json"))
         self.assertEqual(data["name"], "ai-engineering-governance")
-        self.assertEqual(data["plugins"][0]["version"], "1.0.4")
+        self.assertEqual(data["plugins"][0]["version"], "1.1.0")
         self.assertEqual(data["plugins"][0]["source"], "./plugins/ai-engineering-governance")
         self.assertNotIn("pluginRoot", data)
 
     def test_plugin_manifest(self):
         data = json.loads(self.plugin_read(".zcode-plugin/plugin.json"))
         self.assertEqual(data["name"], "ai-engineering-governance")
-        self.assertEqual(data["version"], "1.0.4")
+        self.assertEqual(data["version"], "1.1.0")
         self.assertEqual(data["license"], "FSL-1.1-MIT")
         self.assertEqual(data["author"]["name"], "Gianluca Iannotta")
 
@@ -35,6 +39,8 @@ class RepositoryTests(unittest.TestCase):
             "agents/architect.md",
             "agents/executor.md",
             "agents/reviewer.md",
+            "agents/reviewer-architecture.md",
+            "agents/final-reviewer.md",
             "agents/arbiter.md",
             "commands/ai-init.md",
             "commands/ai-setup.md",
@@ -46,16 +52,26 @@ class RepositoryTests(unittest.TestCase):
             "commands/ai-arbiter.md",
             "commands/ai-release.md",
             "skills/ai-engineering-governance/SKILL.md",
+            "skills/ai-engineering-governance/references/requirement-provenance.md",
+            "skills/ai-engineering-governance/references/context-routing.md",
+            "skills/ai-engineering-governance/references/verification.md",
+            "skills/ai-engineering-governance/references/operational-assurance.md",
         ]
         for rel in required:
             self.assertTrue((PLUGIN / rel).is_file(), rel)
 
-    def test_only_canonical_arbiter_command_exists(self):
-        canonical = PLUGIN / "commands" / "ai-arbiter.md"
-        legacy = PLUGIN / "commands" / "ai-arbitrate.md"
-        self.assertTrue(canonical.is_file())
-        self.assertFalse(legacy.exists())
-        self.assertIn("arbiter role", canonical.read_text(encoding="utf-8").lower())
+    def test_no_redundant_commands_added(self):
+        prohibited = (
+            "ai-arbitrate.md",
+            "ai-resume.md",
+            "ai-metrics.md",
+            "ai-plan.md",
+            "ai-workflow.md",
+            "ai-audit.md",
+            "ai-docs.md",
+        )
+        for name in prohibited:
+            self.assertFalse((PLUGIN / "commands" / name).exists(), name)
 
     def test_agents_do_not_hardcode_models(self):
         prohibited = ("glm-", "minimax", "codex", "claude-", "gpt-", "gemini-", "qwen", "kimi", "grok")
@@ -65,106 +81,179 @@ class RepositoryTests(unittest.TestCase):
                 self.assertNotIn(token, text, f"{token} in {path}")
 
     def test_manifest_versions_are_current(self):
-        skill = self.plugin_read("skills/ai-engineering-governance/SKILL.md")
-        self.assertIn("version: 1.0.4", skill)
+        skill = self.skill_read("SKILL.md")
+        self.assertIn("version: 1.1.0", skill)
         self.assertNotIn("v3", self.read("README.md").lower())
 
-    def test_project_state_has_audit_baseline_deployment_and_arbitration(self):
-        state = self.plugin_read("skills/ai-engineering-governance/references/project-state.md")
+    def test_project_state_is_task_centric(self):
+        state = self.skill_read("references/project-state.md")
         for token in (
-            "PROJECT_HISTORY.md",
-            "CODEBASE_BASELINE.md",
-            "DEPLOYMENT_SCOPE.md",
-            "arbitration/",
-            "READY_FOR_EXECUTION",
-            "ARBITRATION_REQUIRED",
+            "CONTEXT_INDEX.md",
+            "tasks/",
+            "ORIGINAL_USER_REQUEST.md",
+            "CLARIFICATION_TRANSCRIPT.md",
+            "APPROVED_REQUIREMENTS.md",
+            "CONTEXT_MANIFEST.md",
+            "TASK_PLAN.md",
+            "VERIFICATION_PROFILE.md",
+            "RUN_STATE.json",
+            "VERIFICATION_EVIDENCE.md",
+            "READY_FOR_REVIEW",
+            "TASK_VALIDATED",
             "LOCAL_COMMITTED",
         ):
             self.assertIn(token, state)
 
-    def test_central_policy_requires_history_commits_no_push_and_secret_safety(self):
-        skill = self.plugin_read("skills/ai-engineering-governance/SKILL.md").lower()
+    def test_requirement_provenance_contract(self):
+        text = self.skill_read("references/requirement-provenance.md").lower()
         for token in (
-            "project_history.md",
-            "append-only",
-            "local commit",
-            "never push",
-            "explicit authorization",
-            "plaintext secret",
-            "deployment_scope.md",
-            "codebase_baseline.md",
-            "arbitration_required",
-            "/ai-arbiter",
-        ):
-            self.assertIn(token, skill)
-        self.assertNotIn("/ai-arbitrate", skill)
-
-    def test_maintainable_source_structure_policy(self):
-        skill = self.plugin_read("skills/ai-engineering-governance/SKILL.md").lower()
-        architect = self.plugin_read("agents/architect.md").lower()
-        executor = self.plugin_read("agents/executor.md").lower()
-        reviewer = self.plugin_read("agents/reviewer.md").lower()
-        for token in ("maintainable source structure", "god files", "micro-files", "cohesive", "line-count"):
-            self.assertIn(token, skill)
-        self.assertIn("targeted split", architect)
-        self.assertIn("god files", architect)
-        self.assertIn("micro-file", executor)
-        self.assertIn("maintainability", reviewer)
-        self.assertIn("line-count", reviewer)
-
-    def test_architect_is_adversarial_and_task_gated(self):
-        text = self.plugin_read("agents/architect.md").lower()
-        for token in (
-            "complete codebase",
-            "adversarial",
-            "codebase_baseline.md",
-            "before every task",
+            "original_user_request.md",
+            "clarification_transcript.md",
+            "approved_requirements.md",
+            "cannot override",
             "ready_for_execution",
             "secret",
-            "arbitration_required",
         ):
             self.assertIn(token, text)
 
-    def test_executor_commits_validated_tasks_locally_and_never_pushes(self):
+    def test_incremental_context_routing_contract(self):
+        text = self.skill_read("references/context-routing.md").lower()
+        for token in (
+            "context_index.md",
+            "context_manifest.md",
+            "current git delta",
+            "read-only",
+            "2–4",
+            "minimum_change_assessment",
+            "smallest correct, secure, maintainable solution",
+        ):
+            self.assertIn(token, text)
+
+    def test_evidence_driven_verification_contract(self):
+        text = self.skill_read("references/verification.md")
+        for token in (
+            "TASK_RISK_PROFILE",
+            "NONE | LOW | HIGH",
+            "REQUIRED | CONDITIONAL | NOT_APPLICABLE",
+            "PASS | FAIL | UNAVAILABLE | STALE | BLOCKED",
+            "BUGFIX_PROOF",
+            "TEST_IMPACT_MAP",
+            "CONTRACT_COMPATIBILITY",
+            "DEPENDENCY_ADMISSION_GATE",
+            "PRE_CHANGE_SAFEPOINT",
+            "MIGRATION_PROOF",
+            "ELEVATED",
+            "reviewer-architecture",
+            "final-reviewer",
+        ):
+            self.assertIn(token, text)
+
+    def test_operational_assurance_contract(self):
+        text = self.skill_read("references/operational-assurance.md")
+        for token in (
+            "PREVIEW_ENVIRONMENT_GATE",
+            "USER_FLOW_VERIFICATION",
+            "VISUAL_BEHAVIOR_GATE",
+            "RELEASE_RECOVERY_PROOF",
+            "TOOL_CAPABILITY_PROFILE",
+            "SAFE_EXPERIMENTATION",
+            "Tool availability is not authorization",
+        ):
+            self.assertIn(token, text)
+
+    def test_architect_requires_full_task_contract(self):
+        text = self.plugin_read("agents/architect.md").lower()
+        for token in (
+            "original_user_request.md",
+            "approved_requirements.md",
+            "context_manifest.md",
+            "task_plan.md",
+            "verification_profile.md",
+            "run_state.json",
+            "task_risk_profile",
+            "minimum_change_assessment",
+            "ready_for_execution",
+            "elevated",
+        ):
+            self.assertIn(token, text)
+
+    def test_executor_cannot_self_validate_or_bypass_evidence(self):
         text = self.plugin_read("agents/executor.md").lower()
         for token in (
-            "ready_for_execution",
-            "task_validated",
-            "local commit",
+            "task_risk_profile",
+            "dependency_admission_gate",
+            "pre_change_safepoint",
+            "verification_evidence.md",
+            "unavailable",
+            "stale",
+            "ready_for_review",
+            "do not mark the task `task_validated` yourself",
+            "local task commit",
             "never push",
-            "explicit authorization",
-            "staged",
-            "secret",
         ):
             self.assertIn(token, text)
         self.assertNotIn("git add .", text)
 
-    def test_reviewer_always_scans_plaintext_secrets(self):
-        text = self.plugin_read("agents/reviewer.md").lower()
-        self.assertIn("plaintext secret", text)
-        self.assertIn("blocking", text)
-        self.assertIn("deployment_scope.md", text)
+    def test_adaptive_review_roles_are_independent(self):
+        reviewer = self.plugin_read("agents/reviewer.md").lower()
+        architecture = self.plugin_read("agents/reviewer-architecture.md").lower()
+        final = self.plugin_read("agents/final-reviewer.md").lower()
+        self.assertIn("standard", reviewer)
+        self.assertIn("elevated", reviewer)
+        self.assertIn("do not read or rely on the sibling", architecture)
+        self.assertIn("original_user_request.md", final)
+        self.assertIn("plan_defect", final)
+        self.assertIn("pass", final)
 
-    def test_arbiter_is_independent_and_only_for_disputes(self):
-        text = self.plugin_read("agents/arbiter.md").lower()
-        for token in ("independent", "architect", "executor", "disagreement", "arbitration"):
+    def test_start_reconciles_persisted_state_instead_of_new_resume_command(self):
+        text = self.plugin_read("commands/ai-start.md").lower()
+        for token in (
+            "run_state.json",
+            "git head/status/diff",
+            "evidence freshness",
+            "invalidate only evidence/reviews whose inputs changed",
+            "ready_for_review",
+        ):
             self.assertIn(token, text)
+        self.assertFalse((PLUGIN / "commands" / "ai-resume.md").exists())
 
-    def test_release_excludes_non_production_artifacts(self):
+    def test_maintainable_source_structure_policy(self):
+        skill = self.skill_read("SKILL.md").lower()
+        architect = self.plugin_read("agents/architect.md").lower()
+        executor = self.plugin_read("agents/executor.md").lower()
+        reviewer = self.plugin_read("agents/reviewer.md").lower()
+        for token in ("god files", "micro-files", "cohesive", "line-count"):
+            self.assertIn(token, skill)
+        self.assertIn("targeted split", architect)
+        self.assertIn("micro-files", executor)
+        self.assertIn("maintainability", reviewer)
+
+    def test_secret_git_and_deployment_safety_remain(self):
+        skill = self.skill_read("SKILL.md").lower()
+        for token in (
+            "plaintext secrets",
+            "remove from tracking",
+            "revocation/rotation",
+            "never push by default",
+            "explicit action-scoped user authorization",
+            "deployment_scope.md",
+            "production packages",
+        ):
+            self.assertIn(token, skill)
+
+    def test_release_requires_elevated_fresh_operational_evidence(self):
         text = self.plugin_read("commands/ai-release.md").lower()
         for token in (
-            "deployment_scope.md",
+            "always `elevated`",
+            "operational assurance",
+            "public-contract compatibility",
+            "release recovery proof",
+            "reviewer + architecture/security reviewer",
             ".ai/",
             "tests",
-            "documentation",
             "plaintext secrets",
             "runtime-required",
         ):
-            self.assertIn(token, text)
-
-    def test_init_creates_history_baseline_and_deployment_scope(self):
-        text = self.plugin_read("commands/ai-init.md")
-        for token in ("PROJECT_HISTORY.md", "CODEBASE_BASELINE.md", "DEPLOYMENT_SCOPE.md"):
             self.assertIn(token, text)
 
     def test_command_names_are_valid(self):
