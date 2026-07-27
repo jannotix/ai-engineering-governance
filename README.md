@@ -1,41 +1,50 @@
 # AI Engineering Governance
 
-AI Engineering Governance is a model-agnostic ZCode plugin for structured, auditable software delivery.
+AI Engineering Governance is a model-agnostic ZCode plugin for structured, auditable, evidence-driven software delivery.
 
-It separates work into three primary roles and one optional dispute role:
+It keeps the command surface small while separating planning, implementation, independent review, and dispute resolution.
 
-- **Architect** — adversarially reverse-engineers the codebase, owns requirements and architecture, and approves every task before implementation.
-- **Executor** — implements only approved tasks, verifies them, records evidence, and creates local task commits.
-- **Reviewer** — independently verifies completed milestones and final release candidates.
-- **Arbiter** — resolves material unresolved disagreement between Architect planning and Executor implementation evidence.
+## Roles
 
-The plugin does not require a specific model or provider.
+Core roles:
+
+- **Architect** — adversarial baseline/context analysis, requirement provenance, architecture, task planning, risk/evidence planning, and execution authorization.
+- **Executor** — implements only approved work and records execution evidence.
+- **Reviewer** — independently reviews every completed governed task.
+- **Arbiter** — resolves material unresolved Architect/Executor disagreement before validation.
+
+ELEVATED review adds two specialized roles only when risk requires them:
+
+- **Architecture/Security Reviewer** — independent architecture, security, data, dependency, deployment, recovery, and maintainability review.
+- **Final Reviewer** — adjudicates ELEVATED review after both independent advisory reviews complete.
+
+No provider or model ID is hard-coded.
 
 ## Core guarantees
 
-- Initial adversarial analysis of the complete codebase before implementation.
-- Architect planning and approval before every Executor task.
-- Append-only project engineering history.
-- Local Git commit for every validated task.
-- No Git push without explicit authorization.
-- Plaintext secrets excluded from Git by default.
-- Architect and Reviewer always check for plaintext secret exposure.
-- Development workspace separated from the production deployment scope.
-- Tests, development documentation, governance, and evidence excluded from production packages by default.
-- Production source kept focused, cohesive, and maintainable without arbitrary line-count rules.
-- Independent milestone and release review.
-- Optional independent arbitration when planning and implementation materially disagree.
+- Complete adversarial codebase baseline before first implementation.
+- Incremental context routing for routine tasks instead of repeated full-repository rescans.
+- Canonical task requirement provenance separated from Architect interpretation.
+- Architect approval before every Executor task.
+- Minimum-change assessment before implementation.
+- Task risk profile and planned verification before code changes.
+- `UNAVAILABLE` or `STALE` evidence is never silently treated as PASS.
+- Operational Assurance for runtime, user-flow, visual, tooling, recovery, and isolated experimentation when applicable.
+- Adaptive independent review: STANDARD for normal tasks, ELEVATED for high-risk/milestone/release work.
+- Local Git commit only after required governed review PASS.
+- No Git push without explicit action-scoped authorization.
+- Plaintext secrets excluded from Git by default and checked by planning/review roles.
+- Production runtime scope separated from tests, development documentation, `.ai/`, evidence, and local tooling.
+- Focused, cohesive production source without arbitrary line-count rules or artificial micro-file fragmentation.
 - Clean-install and existing-install migration verification.
-- Evidence before completion claims.
 
 ## Install in ZCode
 
-1. Open any workspace in ZCode.
+1. Open a workspace in ZCode.
 2. Open **Settings → Plugins → Marketplace**.
-3. Click **+**.
-4. Add `https://github.com/jannotix/ai-engineering-governance`.
-5. Install **AI Engineering Governance**.
-6. Start a new Agent session if needed.
+3. Add `https://github.com/jannotix/ai-engineering-governance`.
+4. Install **AI Engineering Governance**.
+5. Start a new Agent session when required by ZCode plugin reload behavior.
 
 ## First use
 
@@ -46,168 +55,193 @@ Run:
 /ai-setup
 ```
 
-`/ai-init` creates or validates project-local `.ai/` state.
+`/ai-init` creates or non-destructively upgrades project-local governance state.
 
-The initial project state includes:
+Reusable state includes:
 
 ```text
 .ai/
 ├── CODEBASE_BASELINE.md
+├── CONTEXT_INDEX.md
 ├── DEPLOYMENT_SCOPE.md
 ├── PROJECT_HISTORY.md
 ├── CONFIG.md
 ├── STATUS.md
-├── CURRENT_MILESTONE.md
-├── ...
+├── tasks/
 └── arbitration/
 ```
 
-The Architect must complete the initial adversarial codebase baseline before implementation can begin.
+The Architect completes the initial adversarial baseline before implementation begins.
 
-`/ai-setup` records role assignments:
+`/ai-setup` records role assignments. ZCode model selection remains controlled by the user.
+
+## Task-local governance
+
+Each governed task keeps its own canonical evidence under:
 
 ```text
-Architect: your preferred architecture/reasoning model
-Executor: your preferred coding model
-Reviewer: your preferred review model or external reviewer
-Reviewer mode: INTERNAL or EXTERNAL
-Arbiter: optional dispute-resolution model or external arbiter
-Arbiter mode: DISABLED, INTERNAL, or EXTERNAL
+.ai/tasks/<TASK-ID>/
+├── ORIGINAL_USER_REQUEST.md
+├── CLARIFICATION_TRANSCRIPT.md
+├── APPROVED_REQUIREMENTS.md
+├── CONTEXT_MANIFEST.md
+├── TASK_PLAN.md
+├── VERIFICATION_PROFILE.md
+├── RUN_STATE.json
+├── evidence/
+│   └── VERIFICATION_EVIDENCE.md
+└── reviews/
 ```
 
-Role bindings are governance configuration. They do not switch the ZCode model automatically.
+### Requirement provenance
+
+```text
+ORIGINAL_USER_REQUEST
+        +
+CLARIFICATION_TRANSCRIPT
+        ↓
+APPROVED_REQUIREMENTS
+        ↓
+TASK_PLAN
+        ↓
+EXECUTOR
+```
+
+A plan cannot silently replace or weaken controlling user requirements. A correct implementation of a materially incorrect plan is a plan defect, not a pass.
+
+### Context routing
+
+The initial baseline analyzes the complete authored codebase. Routine tasks use:
+
+```text
+CODEBASE_BASELINE
++ CONTEXT_INDEX
++ current Git delta
++ targeted primary evidence
++ bounded read-only ZCode exploration when useful
+        ↓
+CONTEXT_MANIFEST
+```
+
+This preserves repository understanding without repeatedly rescanning large codebases.
+
+### Planning and verification
+
+Before `READY_FOR_EXECUTION`, Architect creates a task plan with scope, acceptance criteria, regression surface, migration/security/deployment/maintainability/documentation impact, external validation, and `MINIMUM_CHANGE_ASSESSMENT`.
+
+`VERIFICATION_PROFILE.md` classifies risk dimensions as:
+
+```text
+NONE | LOW | HIGH
+```
+
+and planned gates as:
+
+```text
+REQUIRED | CONDITIONAL | NOT_APPLICABLE
+```
+
+Executed evidence is recorded as:
+
+```text
+PASS | FAIL | UNAVAILABLE | STALE | BLOCKED
+```
+
+Applicable evidence gates include bugfix proof, test-impact mapping, contract compatibility, dependency admission/delta, generated artifacts, pre-change safepoints, migration proof, runtime/user-flow/visual verification, tool/MCP capability assessment, recovery proof, and safe experimentation.
+
+Governance uses existing repository/tooling capabilities first. It does not install verification dependencies or invent project thresholds merely to satisfy a gate.
 
 ## Typical workflow
 
-### Initial baseline
-
-Select the configured Architect model and run:
-
 ```text
-/ai-architect
-```
-
-The Architect first performs:
-
-```text
-complete codebase
-    ↓
-adversarial reverse engineering
-    ↓
-security and plaintext-secret check
-    ↓
-deployment boundary
-    ↓
-maintainability and module-boundary analysis
-    ↓
-CODEBASE_BASELINE.md
-```
-
-### Every task
-
-Before each task, the Architect returns:
-
-```text
-current repository state
-    ↓
-changes since previous task
-    ↓
-adversarial impact analysis
-    ↓
-task scope and slices
-    ↓
-acceptance criteria
-    ↓
-tests / regressions / migrations
-    ↓
-security / secrets / deployment impact
-    ↓
-maintainability impact
-    ↓
+INITIAL ADVERSARIAL BASELINE
+          ↓
+REQUIREMENT PROVENANCE
+          ↓
+INCREMENTAL CONTEXT ROUTING
+          ↓
+TASK PLAN + MINIMUM CHANGE
+          ↓
+RISK + VERIFICATION PROFILE
+          ↓
 READY_FOR_EXECUTION
-```
-
-Then select the configured Executor model and run:
-
-```text
-/ai-execute
-```
-
-The Executor performs:
-
-```text
-approved task
-    ↓
-implementation
-    ↓
-focused tests
-    ↓
-regression and runtime verification
-    ↓
+          ↓
+EXECUTOR
+          ↓
+VERIFICATION EVIDENCE
+          ↓
+READY_FOR_REVIEW
+          ↓
+STANDARD or ELEVATED REVIEW
+          ↓
 TASK_VALIDATED
-    ↓
-staged diff + plaintext-secret check
-    ↓
-local task commit
-    ↓
+          ↓
+SCOPED LOCAL COMMIT
+          ↓
 NO PUSH
 ```
 
-The Architect then plans or re-authorizes the next task.
+### STANDARD review
+
+Normal tasks use the independent Reviewer.
+
+### ELEVATED review
+
+HIGH-risk tasks, security-sensitive work, major migrations, material public-contract changes, recovery-sensitive work, milestone completion, and release candidates use:
+
+```text
+Reviewer
++
+Architecture/Security Reviewer
+        ↓
+Final Reviewer
+```
+
+The two advisory reviewers inspect the same frozen target independently. Final Reviewer adjudicates only after both reports complete.
 
 ## Arbitration
 
-When Executor evidence materially conflicts with the approved plan, the Executor stops and returns the evidence to the Architect.
-
-If normal replanning cannot safely resolve the disagreement, the Architect sets:
+When Executor evidence materially conflicts with the approved plan and normal replanning cannot safely resolve it:
 
 ```text
 ARBITRATION_REQUIRED
-```
-
-Then run:
-
-```text
+        ↓
 /ai-arbiter
+        ↓
+Arbiter
+        ↓
+Architect replan/re-authorization
 ```
 
-For an internal Arbiter, select its configured model first.
-
-For an external Arbiter, `/ai-arbiter` prepares the handoff under `.ai/arbitration/`.
-
-The Arbiter is independent. Neither Architect nor Executor automatically wins the disagreement.
-
-## Milestone review
-
-For an internal Reviewer:
-
-```text
-/ai-review
-```
-
-For an external Reviewer, the command prepares the handoff and the external reviewer inspects the same repository and `.ai/` state.
-
-The Reviewer always checks security, plaintext secrets, migrations, tests, runtime evidence, deployment-scope correctness, and maintainability risks.
+Arbiter is independent; neither Architect nor Executor automatically wins.
 
 ## Continue later
 
-When reopening a governed project:
+Use:
 
 ```text
 /ai-start
 ```
 
-The plugin reads `.ai/STATUS.md` and the latest `PROJECT_HISTORY.md` event to route the next role.
+It reconciles persisted `.ai/` task state with current Git head/status/diff, requirement/context freshness, verification inputs, and frozen review state. It does not depend on chat history and invalidates only evidence/reviews affected by changed inputs.
 
-Use:
+Use `/ai-status` for a concise report of provenance integrity, context freshness, high-risk dimensions, evidence state, review depth, blockers, Git state, and exact next action.
 
-```text
-/ai-status
-```
+## Git and secret policy
 
-to see current task, latest history event, Git state, blockers, arbitration, local commit state, and the exact next action.
+A validated task gets one scoped local commit. The Executor must inspect the staged diff and plaintext-secret exposure before committing.
 
-## Final release
+Git push requires explicit authorization for that specific push; prior authorization is not reusable.
+
+Plaintext credentials, tokens, keys, passwords, private certificates/signing material, production `.env` files, and equivalent secrets are excluded from Git by default. If a tracked secret was exposed, ignore rules alone are insufficient; remove it from tracking and assess revocation/rotation.
+
+## Production scope
+
+`.ai/DEPLOYMENT_SCOPE.md` defines the deployable runtime boundary.
+
+Production packages contain only runtime-required files/assets and exclude `.ai/`, tests, development-only documentation, review/evidence artifacts, local tooling, caches, IDE state, and plaintext secrets unless a documented runtime/legal/packaging exception applies.
+
+## Release
 
 Run:
 
@@ -215,117 +249,40 @@ Run:
 /ai-release
 ```
 
-The final package is built from `.ai/DEPLOYMENT_SCOPE.md`, not by uploading the entire development workspace.
+Release review is always ELEVATED and revalidates fresh applicable evidence including build/tests/security, migrations/upgrades, clean install, external/runtime behavior, production package extraction/reinstall, deployment scope, secrets, and recovery proof when applicable.
 
-The release workflow verifies:
+The release workflow never automatically deploys, rolls back, merges, or pushes.
+
+Final verdict:
 
 ```text
-requirements
-    ↓
-tests and quality gates
-    ↓
-migration/upgrade path when applicable
-    ↓
-clean installation
-    ↓
-external integrations
-    ↓
-plaintext-secret scan
-    ↓
-production-only deployment package
-    ↓
-package extraction and reinstall
-    ↓
-adversarial release review
-    ↓
 READY_FOR_PRODUCTION
-or
 NOT_READY_FOR_PRODUCTION
 ```
-
-## Project history
-
-`.ai/PROJECT_HISTORY.md` is append-only.
-
-It records material actions with timestamp, role, configured model or external-role label, milestone/task/slice, result, evidence, Git action, and next state.
-
-This history survives chat/session changes and is versioned with the project.
-
-## Git policy
-
-Each validated task requires a local commit.
-
-The Executor stages only the approved task files and relevant `.ai/` evidence/state. It must inspect staged content before committing.
-
-Git push is disabled by policy unless the user explicitly authorizes that specific push action.
-
-A previous push authorization does not authorize future pushes.
-
-## Secret policy
-
-Plaintext secrets are excluded from Git by default.
-
-Architect and Reviewer always inspect for plaintext secret exposure. Executor checks staged content before task commits.
-
-If a secret is already tracked, adding it to ignore rules is not enough. It must be removed from tracking and potential exposure assessed for revocation or rotation.
-
-Prefer runtime environment variables, secret managers, or encrypted secret stores.
-
-## Maintainable source structure
-
-Production source should remain understandable and maintainable over time.
-
-Prefer focused files and modules with one clear responsibility or one tightly cohesive concern. Avoid monolithic god files that accumulate unrelated responsibilities.
-
-When a task would materially worsen an oversized or low-cohesion file, the Architect should plan a targeted extraction or split inside the task scope.
-
-Do not split code by arbitrary line-count thresholds. Avoid artificial micro-files, wrapper-only abstractions, and unnecessary indirection.
-
-The goal is high cohesion, narrow interfaces, good testability, and files that can be changed without understanding unrelated implementation details.
-
-## Development workspace and production codebase
-
-The repository is the development workspace.
-
-`.ai/DEPLOYMENT_SCOPE.md` defines the production runtime scope.
-
-For new projects, development-only content should live outside the deployable production scope. This includes tests, development documentation, `.ai/`, review artifacts, evidence, local tooling, and similar material.
-
-For existing projects, the Architect identifies the current safe runtime boundary instead of blindly restructuring the repository.
-
-Production packages contain only runtime-required files.
 
 ## Commands
 
 | Command | Purpose |
 | --- | --- |
-| `/ai-init` | Initialize or upgrade governance state |
+| `/ai-init` | Initialize or non-destructively upgrade governance state |
 | `/ai-setup` | Configure role bindings and review/arbitration modes |
-| `/ai-status` | Show state, history, Git status, blockers, and next action |
-| `/ai-architect` | Baseline the codebase and plan/re-authorize the next task |
-| `/ai-execute` | Implement and validate approved work, then create the local task commit |
-| `/ai-arbiter` | Resolve or hand off a material Architect/Executor disagreement |
-| `/ai-review` | Independently review a completed milestone |
-| `/ai-start` | Continue from current governed state |
+| `/ai-status` | Show provenance, risk/evidence, review, Git, blockers, and next action |
+| `/ai-architect` | Baseline/context analysis and implementation-ready task planning |
+| `/ai-execute` | Implement approved work and record task-local evidence |
+| `/ai-review` | Run STANDARD or ELEVATED independent review |
+| `/ai-arbiter` | Resolve a material Architect/Executor disagreement |
+| `/ai-start` | Continue safely from persisted governance + Git state |
 | `/ai-release` | Run final production-readiness workflow |
-
-## Model selection
-
-Plugin subagents do not hard-code model IDs. They inherit the model selected in ZCode.
-
-Before invoking a role, select its configured model in the ZCode model picker.
-
-External Reviewer and Arbiter modes allow those roles to run outside ZCode.
 
 ## Architecture policy
 
-The Architect chooses the least complex structure that safely satisfies the requirements:
+Prefer, in order:
 
-1. Preserve the existing architecture when appropriate.
-2. Prefer simple modular design.
-3. Prefer a modular monolith for larger applications.
-4. Apply tactical DDD patterns only to genuinely complex domains.
-5. Introduce distributed services only with explicit operational justification.
+1. existing maintainable project architecture;
+2. simple modular design;
+3. modular monolith for larger applications;
+4. tactical DDD only for genuinely complex domains;
+5. distributed services only with explicit operational justification.
 
 Patterns are tools, not goals.
 
