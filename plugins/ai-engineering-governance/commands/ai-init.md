@@ -1,5 +1,5 @@
 ---
-description: Initialize AI Engineering Governance, audit history, adversarial baseline state, and deployment boundary in the current workspace.
+description: Initialize AI Engineering Governance, adversarial baseline state, context routing, task evidence structure, audit history, and deployment boundary in the current workspace.
 skills: ai-engineering-governance
 ---
 
@@ -7,26 +7,31 @@ Initialize governance for the current workspace.
 
 Inspect the repository before creating project-state files.
 
-If `.ai/` exists, do not overwrite it. Validate it and create only missing canonical governance structure without replacing project decisions or prior history.
+If `.ai/` exists, do not overwrite it. Validate it and create only missing canonical governance structure without replacing project decisions, historical tasks, or prior history.
 
-Ensure these files exist:
+Ensure reusable files exist:
 
 - `.ai/PROJECT_HISTORY.md`
 - `.ai/CODEBASE_BASELINE.md`
+- `.ai/CONTEXT_INDEX.md`
 - `.ai/DEPLOYMENT_SCOPE.md`
 
-Ensure `.ai/arbitration/` exists.
+Ensure directories exist:
+
+- `.ai/tasks/`
+- `.ai/arbitration/`
+- `.ai/release/`
+
+Do not fabricate task-local evidence for historical completed tasks during upgrade. New task artifacts are created from current authoritative requirements and repository evidence when the task is planned.
 
 Determine whether the repository is greenfield or part of an existing installed system. Ask only when this cannot be established reliably.
 
-For an existing installation, request current installed version, schema, runtime, migration mechanism, and representative upgrade-test information when unavailable from the repository.
+For an existing installation, request current installed version, schema, runtime, migration mechanism, and representative upgrade-test information when unavailable from repository evidence.
 
-Record role bindings in `.ai/CONFIG.md`, including optional Arbiter configuration.
+Record role bindings in `.ai/CONFIG.md`, including adaptive ELEVATED-review mode and optional Arbiter configuration.
 
-Never store credentials or secret values in `.ai/`.
+Never store credentials or secret values in `.ai/`. Inspect repository ignore rules for obvious secret-bearing local files. Do not stage or commit plaintext secrets.
 
-Inspect repository ignore rules for obvious secret-bearing local files. Do not stage or commit plaintext secrets.
+Set `.ai/STATUS.md` to `BASELINING` until Architect completes initial adversarial analysis and produces a usable `CODEBASE_BASELINE.md`, `CONTEXT_INDEX.md`, and `DEPLOYMENT_SCOPE.md`.
 
-Set `.ai/STATUS.md` to `BASELINING` until the Architect completes the initial adversarial analysis of the complete codebase and produces `CODEBASE_BASELINE.md` plus `DEPLOYMENT_SCOPE.md`.
-
-Append an initialization event to `PROJECT_HISTORY.md`.
+Append an initialization/upgrade event to `PROJECT_HISTORY.md`.
