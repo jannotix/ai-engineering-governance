@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.1.0 — 2026-07-27
+
+- Added canonical per-task Requirement Provenance with original request, clarification transcript, and approved requirements.
+- Added reusable `CONTEXT_INDEX.md` plus task-local `CONTEXT_MANIFEST.md` for incremental context routing from validated baseline + Git delta.
+- Added mandatory `MINIMUM_CHANGE_ASSESSMENT` before implementation.
+- Added task-local `VERIFICATION_PROFILE.md`, `TASK_RISK_PROFILE`, `RUN_STATE.json`, and `VERIFICATION_EVIDENCE.md`.
+- Added evidence states `PASS | FAIL | UNAVAILABLE | STALE | BLOCKED`; unavailable/stale required evidence cannot silently pass.
+- Added Evidence-Driven gates for bugfix proof, test impact, contract compatibility, dependencies, generated artifacts, safepoints, and migrations.
+- Added Operational Assurance for preview/runtime, user flows, visual behavior, tool/MCP capabilities, recovery, and safe experimentation without adding new slash commands.
+- Added adaptive review: STANDARD Reviewer for normal tasks; independent Reviewer + Architecture/Security Reviewer + Final Reviewer for ELEVATED high-risk/milestone/release work.
+- Moved task local commit after the review depth required by the verification profile has passed.
+- Extended `/ai-start` to reconcile persisted task state, Git state, and evidence freshness without adding a redundant resume command.
+- Preserved model/provider neutrality, `/ai-arbiter`, secret safety, production-only deployment scope, maintainable source rules, and explicit push authorization.
+
 ## 1.0.4 — 2026-07-25
 
 - Removed the legacy `/ai-arbitrate` command.
