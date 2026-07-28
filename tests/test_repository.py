@@ -23,14 +23,14 @@ class RepositoryTests(unittest.TestCase):
     def test_marketplace_manifest(self):
         data = json.loads(self.read("marketplace.json"))
         self.assertEqual(data["name"], "ai-engineering-governance")
-        self.assertEqual(data["plugins"][0]["version"], "1.1.0")
+        self.assertEqual(data["plugins"][0]["version"], "1.2.0")
         self.assertEqual(data["plugins"][0]["source"], "./plugins/ai-engineering-governance")
         self.assertNotIn("pluginRoot", data)
 
     def test_plugin_manifest(self):
         data = json.loads(self.plugin_read(".zcode-plugin/plugin.json"))
         self.assertEqual(data["name"], "ai-engineering-governance")
-        self.assertEqual(data["version"], "1.1.0")
+        self.assertEqual(data["version"], "1.2.0")
         self.assertEqual(data["license"], "FSL-1.1-MIT")
         self.assertEqual(data["author"]["name"], "Gianluca Iannotta")
 
@@ -56,6 +56,7 @@ class RepositoryTests(unittest.TestCase):
             "skills/ai-engineering-governance/references/context-routing.md",
             "skills/ai-engineering-governance/references/verification.md",
             "skills/ai-engineering-governance/references/operational-assurance.md",
+            "skills/ai-engineering-governance/references/product-lifecycle.md",
         ]
         for rel in required:
             self.assertTrue((PLUGIN / rel).is_file(), rel)
@@ -63,6 +64,7 @@ class RepositoryTests(unittest.TestCase):
     def test_no_redundant_commands_added(self):
         prohibited = (
             "ai-arbitrate.md",
+            "ai-discover.md",
             "ai-resume.md",
             "ai-metrics.md",
             "ai-plan.md",
@@ -82,13 +84,17 @@ class RepositoryTests(unittest.TestCase):
 
     def test_manifest_versions_are_current(self):
         skill = self.skill_read("SKILL.md")
-        self.assertIn("version: 1.1.0", skill)
+        self.assertIn("version: 1.2.0", skill)
         self.assertNotIn("v3", self.read("README.md").lower())
 
-    def test_project_state_is_task_centric(self):
+    def test_project_state_is_task_centric_and_product_aware(self):
         state = self.skill_read("references/project-state.md")
         for token in (
             "CONTEXT_INDEX.md",
+            "product/",
+            "PRODUCT_VISION.md",
+            "PRODUCT_COMPLETENESS_MATRIX.md",
+            "PRODUCT_DECISIONS.md",
             "tasks/",
             "ORIGINAL_USER_REQUEST.md",
             "CLARIFICATION_TRANSCRIPT.md",
@@ -98,11 +104,43 @@ class RepositoryTests(unittest.TestCase):
             "VERIFICATION_PROFILE.md",
             "RUN_STATE.json",
             "VERIFICATION_EVIDENCE.md",
+            "DISCOVERY_REVIEW",
+            "PRODUCT_INCOMPLETE",
             "READY_FOR_REVIEW",
             "TASK_VALIDATED",
             "LOCAL_COMMITTED",
         ):
             self.assertIn(token, state)
+
+    def test_product_lifecycle_contract(self):
+        text = self.skill_read("references/product-lifecycle.md")
+        for token in (
+            "PATCH | BOUNDED_FEATURE | MAJOR_FEATURE | EXISTING_PRODUCT_EVOLUTION | NEW_PRODUCT | HIGH_RISK_CHANGE",
+            "LIGHT | STANDARD | DEEP",
+            "GUIDED | STANDARD | EXPERT",
+            "CONSTRUCTIVE_CHALLENGE",
+            "USER_OBJECTIVE",
+            "USER_PROPOSED_SOLUTION",
+            "GOVERNANCE_RECOMMENDATION",
+            "FINAL_USER_DECISION",
+            "USER_OVERRIDE_ACCEPTED",
+            "GUIDED_DECISION_POLICY",
+            "REVERSIBLE_TECHNICAL_DEFAULT",
+            "PRODUCT_COMPLETENESS_MATRIX.md",
+            "REQUIRED | OPTIONAL | NOT_APPLICABLE | DEFERRED",
+            "VERTICAL_MILESTONE",
+            "DISCOVERY_PASS | DISCOVERY_DEFECT | DISCOVERY_BLOCKED",
+            "PRODUCT_COMPLETE | PRODUCT_DEFECT | PRODUCT_BLOCKED",
+            "READY_FOR_PRODUCTION | NOT_READY_FOR_PRODUCTION",
+            "maximum three",
+        ):
+            self.assertIn(token, text)
+
+    def test_product_artifacts_are_conditional_not_patch_boilerplate(self):
+        text = self.skill_read("references/product-lifecycle.md").lower()
+        self.assertIn("product-affecting", text)
+        self.assertIn("do not create", text)
+        self.assertIn("purely technical patch", text)
 
     def test_requirement_provenance_contract(self):
         text = self.skill_read("references/requirement-provenance.md").lower()
@@ -161,9 +199,21 @@ class RepositoryTests(unittest.TestCase):
         ):
             self.assertIn(token, text)
 
-    def test_architect_requires_full_task_contract(self):
+    def test_architect_runs_adaptive_discovery_and_constructive_challenge(self):
         text = self.plugin_read("agents/architect.md").lower()
         for token in (
+            "work_class",
+            "discovery_depth",
+            "light | standard | deep",
+            "assistance_mode",
+            "constructive_challenge",
+            "user_objective",
+            "user_proposed_solution",
+            "governance_recommendation",
+            "final_user_decision",
+            "product_completeness_matrix.md",
+            "vertical_milestone",
+            "material_unknown_count",
             "original_user_request.md",
             "approved_requirements.md",
             "context_manifest.md",
@@ -194,28 +244,114 @@ class RepositoryTests(unittest.TestCase):
             self.assertIn(token, text)
         self.assertNotIn("git add .", text)
 
-    def test_adaptive_review_roles_are_independent(self):
+    def test_adaptive_review_roles_cover_discovery_product_and_release(self):
         reviewer = self.plugin_read("agents/reviewer.md").lower()
         architecture = self.plugin_read("agents/reviewer-architecture.md").lower()
         final = self.plugin_read("agents/final-reviewer.md").lower()
-        self.assertIn("standard", reviewer)
-        self.assertIn("elevated", reviewer)
+        self.assertIn("discovery_review", reviewer)
+        self.assertIn("product completeness", reviewer)
         self.assertIn("do not read or rely on the sibling", architecture)
+        self.assertIn("discovery_review", architecture)
+        self.assertIn("discovery_pass", final)
+        self.assertIn("product_complete", final)
         self.assertIn("original_user_request.md", final)
         self.assertIn("plan_defect", final)
-        self.assertIn("pass", final)
 
-    def test_start_reconciles_persisted_state_instead_of_new_resume_command(self):
+    def test_architect_command_absorbs_discovery_without_new_command(self):
+        text = self.plugin_read("commands/ai-architect.md").lower()
+        for token in (
+            "work_class",
+            "discovery_depth",
+            "light | standard | deep",
+            "constructive challenge",
+            "product scope",
+            "product completeness",
+            "discovery_review",
+        ):
+            self.assertIn(token, text)
+        self.assertFalse((PLUGIN / "commands" / "ai-discover.md").exists())
+
+    def test_start_reconciles_product_and_task_state(self):
         text = self.plugin_read("commands/ai-start.md").lower()
         for token in (
             "run_state.json",
             "git head/status/diff",
             "evidence freshness",
+            "product state",
+            "product blueprint",
             "invalidate only evidence/reviews whose inputs changed",
             "ready_for_review",
         ):
             self.assertIn(token, text)
         self.assertFalse((PLUGIN / "commands" / "ai-resume.md").exists())
+
+    def test_status_separates_product_completeness_and_release_readiness(self):
+        text = self.plugin_read("commands/ai-status.md").lower()
+        for token in (
+            "work class",
+            "discovery depth",
+            "material unknown",
+            "product scope",
+            "product completeness",
+            "release readiness",
+            "capability",
+            "cycle",
+            "governance_result",
+        ):
+            self.assertIn(token, text)
+
+    def test_release_requires_product_completeness_and_elevated_evidence(self):
+        text = self.plugin_read("commands/ai-release.md").lower()
+        for token in (
+            "product completeness",
+            "product_complete",
+            "always `elevated`",
+            "operational assurance",
+            "public-contract compatibility",
+            "release recovery proof",
+            "reviewer + architecture/security reviewer",
+            ".ai/",
+            "tests",
+            "plaintext secrets",
+            "runtime-required",
+        ):
+            self.assertIn(token, text)
+
+    def test_cycle_limit_is_fail_closed(self):
+        skill = self.skill_read("SKILL.md").lower()
+        for token in (
+            "maximum three failed",
+            "human_input_required",
+            "baseline",
+            "discovery",
+            "task",
+        ):
+            self.assertIn(token, skill)
+
+    def test_steering_enters_requirement_provenance(self):
+        skill = self.skill_read("SKILL.md").lower()
+        for token in (
+            "steering.md",
+            "clarification_transcript.md",
+            "approved_requirements.md",
+            "replanning",
+        ):
+            self.assertIn(token, skill)
+
+    def test_machine_readable_governance_result(self):
+        skill = self.skill_read("SKILL.md")
+        for token in (
+            "GOVERNANCE_RESULT",
+            "TASK_ID:",
+            "STATE:",
+            "NEXT_ACTION:",
+            "CYCLE:",
+            "HUMAN_INPUT_REQUIRED:",
+            "RESUMABLE:",
+            "CHECKPOINT:",
+            "EVIDENCE_STATUS:",
+        ):
+            self.assertIn(token, skill)
 
     def test_maintainable_source_structure_policy(self):
         skill = self.skill_read("SKILL.md").lower()
@@ -241,20 +377,17 @@ class RepositoryTests(unittest.TestCase):
         ):
             self.assertIn(token, skill)
 
-    def test_release_requires_elevated_fresh_operational_evidence(self):
-        text = self.plugin_read("commands/ai-release.md").lower()
+    def test_repository_hygiene_workflow_exists(self):
+        workflow = self.read(".github/workflows/verify.yml")
         for token in (
-            "always `elevated`",
-            "operational assurance",
-            "public-contract compatibility",
-            "release recovery proof",
-            "reviewer + architecture/security reviewer",
-            ".ai/",
-            "tests",
-            "plaintext secrets",
-            "runtime-required",
+            "python -m unittest discover -s tests",
+            "tracked temporary or diagnostic residue",
+            "*.tmp",
+            "*.bak",
+            "*.log",
+            "stale documentation reference",
         ):
-            self.assertIn(token, text)
+            self.assertIn(token, workflow)
 
     def test_command_names_are_valid(self):
         pattern = re.compile(r"^[a-z0-9][a-z0-9_:-]{0,63}$")
