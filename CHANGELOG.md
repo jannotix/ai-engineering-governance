@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.0 — 2026-07-28
+
+- Added adaptive product discovery with `WORK_CLASS`, `LIGHT | STANDARD | DEEP` depth, assistance mode, and material-unknown tracking for every governed request.
+- Integrated discovery into `/ai-architect` without adding a redundant `/ai-discover` command.
+- Added constructive challenge that separates user objective, proposed solution, governance recommendation, and final user decision instead of agreeing automatically.
+- Added guided decision policy: only conventional low-risk reversible scope-neutral defaults may proceed without approval.
+- Added conditional `.ai/product/` state for product vision, users/roles, domain/process model, capability completeness, approved blueprint, and append-only product decisions.
+- Added stable capability IDs, vertical milestone delivery, and product capability traceability for product-affecting tasks.
+- Added independent `DISCOVERY_REVIEW` using existing Reviewer and Architecture/Security Reviewer roles with Final Reviewer adjudication.
+- Separated `PRODUCT_COMPLETE | PRODUCT_DEFECT | PRODUCT_BLOCKED` from `READY_FOR_PRODUCTION | NOT_READY_FOR_PRODUCTION`.
+- Added governed mid-task `STEERING.md`, lazy adoption for existing projects, machine-readable `GOVERNANCE_RESULT`, and maximum three failed correction cycles.
+- Added GitHub Actions verification for repository tests, stale documentation references, tracked temporary/diagnostic residue, and secret-pattern checks.
+- Preserved the existing nine slash commands, model/provider neutrality, Evidence-Driven Verification, Operational Assurance, Arbiter workflow, secret safety, production-only packaging, and explicit push authorization.
+
 ## 1.1.0 — 2026-07-27
 
 - Added canonical per-task Requirement Provenance with original request, clarification transcript, and approved requirements.
