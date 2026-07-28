@@ -1,0 +1,61 @@
+name: Verify governance
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate JSON manifests
+        run: |
+          python -m json.tool marketplace.json >/dev/null
+          python -m json.tool plugins/ai-engineering-governance/.zcode-plugin/plugin.json >/dev/null
+
+      - name: Run repository tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Verify repository hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          stale_references=(
+            'FILE_MANIFEST.sha256'
+            '/ai-arbitrate'
+            'commands/ai-arbitrate.md'
+          )
+
+          for reference in "${stale_references[@]}"; do
+            if git grep -nF -- "$reference" -- ':!CHANGELOG.md' ':!tests/test_repository.py'; then
+              echo "stale documentation reference: $reference" >&2
+              exit 1
+            fi
+          done
+
+          tracked_residue="$(git ls-files '*.tmp' '*.bak' '*.log' '*debug-output*' '*diagnostic-output*' '*windows-install-error*')"
+          if [[ -n "$tracked_residue" ]]; then
+            printf 'tracked temporary or diagnostic residue:\n%s\n' "$tracked_residue" >&2
+            exit 1
+          fi
+
+      - name: Scan obvious secret patterns
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git grep -nE 'sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----'; then
+            echo 'Potential plaintext secret material detected.' >&2
+            exit 1
+          fi
