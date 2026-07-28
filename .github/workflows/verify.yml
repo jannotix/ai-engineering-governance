@@ -26,7 +26,19 @@ jobs:
           python -m json.tool plugins/ai-engineering-governance/.zcode-plugin/plugin.json >/dev/null
 
       - name: Run repository tests
-        run: python -m unittest discover -s tests -v
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m unittest discover -s tests -v 2>&1 | tee unittest-output.txt
+
+      - name: Upload unittest diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unittest-output
+          path: unittest-output.txt
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Verify repository hygiene
         shell: bash
