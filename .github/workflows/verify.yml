@@ -39,7 +39,7 @@ jobs:
           )
 
           for reference in "${stale_references[@]}"; do
-            if git grep -nF -- "$reference" -- ':!CHANGELOG.md' ':!tests/test_repository.py'; then
+            if git grep -nF -- "$reference" -- ':!CHANGELOG.md' ':!tests/test_repository.py' ':!.github/workflows/verify.yml'; then
               echo "stale documentation reference: $reference" >&2
               exit 1
             fi
