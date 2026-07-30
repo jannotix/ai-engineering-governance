@@ -4,7 +4,7 @@ Version 2.0.0 supplements prompt governance with local deterministic tools. Mode
 
 ## Runtime requirement
 
-The bundled hooks and MCP server require **Node.js 22 or newer** on `PATH`. They use only Node.js built-ins and install no package or service. Governed memory uses `node:sqlite` and stores its database under `${ZCODE_PLUGIN_DATA}` when available.
+The bundled hooks and MCP server require **Node.js 22.13.0 or newer** on `PATH`. This is the first Node 22 release where `node:sqlite` is available without an experimental command-line flag. The runtime uses only Node.js built-ins and installs no package or service. Governed memory stores its database under `${ZCODE_PLUGIN_DATA}` when available.
 
 If the runtime is unavailable, no model may claim that a deterministic gate passed. Required runtime proof is `UNAVAILABLE` or `BLOCKED`.
 
@@ -22,6 +22,8 @@ workspace | staged | commit | base-diff
 - `base-diff` binds resolved candidate, base, immutable merge base and raw diff identity.
 
 Changing projection or any live dependency invalidates the candidate. A status summary or previous model statement is not candidate identity.
+
+Governed file paths are lexically constrained to the project and reject symbolic-link or junction traversal. Candidate symlinks are hashed as links rather than followed.
 
 ## Approval receipts
 
@@ -156,10 +158,10 @@ PostToolUse
 ```
 
 - `SessionStart` reports runtime, task continuation and receipt status.
-- `PreToolUse` blocks invalid commits, direct receipt mutation, writes to frozen reviewed targets and automatic push/PR/publication/deployment actions.
+- `PreToolUse` blocks invalid commits, direct or patch-based receipt mutation, writes to frozen reviewed targets and automatic push/PR/publication/deployment actions.
 - `PostToolUse` warns that dependent candidate, context, evidence or receipt data may now be stale.
 
-No undocumented `Stop` hook is required. Completion remains governed by `RUN_STATE.json`, `/ai-start`, Goal Mode and explicit postconditions.
+Mutating hook failures are fail-closed. No undocumented `Stop` hook is required. Completion remains governed by `RUN_STATE.json`, `/ai-start`, Goal Mode and explicit postconditions.
 
 ## MCP tools
 
