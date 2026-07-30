@@ -36,6 +36,23 @@ function runHook(projectDir, event, input) {
   return result.stdout.trim() ? JSON.parse(result.stdout) : null
 }
 
+function seedFrozenState(root) {
+  const taskDir = path.join(root, ".ai", "tasks", "TASK-1")
+  fs.mkdirSync(taskDir, { recursive: true })
+  fs.writeFileSync(path.join(root, ".ai", "STATUS.md"), "Current task: TASK-1\n")
+  fs.writeFileSync(path.join(taskDir, "RUN_STATE.json"), JSON.stringify({
+    state: "READY_FOR_REVIEW",
+    terminal: false,
+    review_frozen: true,
+    next_action: {
+      kind: "execute",
+      command: "/ai-review",
+      arguments: ["TASK-1"],
+      expected_postcondition: "TASK_VALIDATED",
+    },
+  }))
+}
+
 test("MCP stdio initializes and exposes deterministic governance tools", () => {
   const input = [
     { jsonrpc: "2.0", id: 1, method: "initialize", params: {} },
@@ -56,37 +73,58 @@ test("MCP stdio initializes and exposes deterministic governance tools", () => {
   ]) assert.ok(names.includes(required), required)
 })
 
-test("PreToolUse denies automatic external actions", () => {
+test("PreToolUse denies direct and shell-wrapped external actions", () => {
   const root = tempProject()
-  const output = runHook(root, "pre-tool-use", {
-    tool_name: "Bash",
-    tool_input: { command: "git push origin main" },
-  })
-  assert.equal(output.hookSpecificOutput.permissionDecision, "deny")
-  assert.match(output.hookSpecificOutput.permissionDecisionReason, /explicit owner authorization/i)
+  for (const command of ["git push origin main", "env git push origin main", "cd . && git push origin main"]) {
+    const output = runHook(root, "pre-tool-use", {
+      tool_name: "Bash",
+      tool_input: { command },
+    })
+    assert.equal(output.hookSpecificOutput.permissionDecision, "deny", command)
+    assert.match(output.hookSpecificOutput.permissionDecisionReason, /explicit owner authorization/i)
+  }
 })
 
 test("PreToolUse denies commit without a valid armed staged receipt", () => {
   const root = tempProject()
   fs.writeFileSync(path.join(root, "app.txt"), "changed\n")
   spawnSync("git", ["add", "app.txt"], { cwd: root })
-  const output = runHook(root, "pre-tool-use", {
-    tool_name: "Bash",
-    tool_input: { command: "git commit -m test" },
-  })
-  assert.equal(output.hookSpecificOutput.permissionDecision, "deny")
-  assert.match(output.hookSpecificOutput.permissionDecisionReason, /approval_receipt|approval receipt/i)
+  for (const command of ["git commit -m test", "env git commit -m test"]) {
+    const output = runHook(root, "pre-tool-use", {
+      tool_name: "Bash",
+      tool_input: { command },
+    })
+    assert.equal(output.hookSpecificOutput.permissionDecision, "deny")
+    assert.match(output.hookSpecificOutput.permissionDecisionReason, /approval_receipt|approval receipt/i)
+  }
 })
 
-test("PreToolUse blocks direct approval receipt mutation", () => {
+test("PreToolUse blocks direct and ApplyPatch approval receipt mutation", () => {
   const root = tempProject()
   const target = path.join(root, ".ai", "tasks", "TASK-1", "approval-receipt.json")
-  const output = runHook(root, "pre-tool-use", {
+  const write = runHook(root, "pre-tool-use", {
     tool_name: "Write",
     tool_input: { file_path: target, content: "{}" },
   })
+  assert.equal(write.hookSpecificOutput.permissionDecision, "deny")
+
+  const patch = runHook(root, "pre-tool-use", {
+    tool_name: "ApplyPatch",
+    tool_input: { patch: "*** Update File: .ai/tasks/TASK-1/approval-receipt.json\n@@\n-{}\n+{}" },
+  })
+  assert.equal(patch.hookSpecificOutput.permissionDecision, "deny")
+  assert.match(patch.hookSpecificOutput.permissionDecisionReason, /deterministic governance MCP tools/i)
+})
+
+test("PreToolUse denies opaque ApplyPatch while review target is frozen", () => {
+  const root = tempProject()
+  seedFrozenState(root)
+  const output = runHook(root, "pre-tool-use", {
+    tool_name: "ApplyPatch",
+    tool_input: { patch: "*** Update File: app.txt\n@@\n-initial\n+changed" },
+  })
   assert.equal(output.hookSpecificOutput.permissionDecision, "deny")
-  assert.match(output.hookSpecificOutput.permissionDecisionReason, /deterministic governance MCP tools/i)
+  assert.match(output.hookSpecificOutput.permissionDecisionReason, /frozen/i)
 })
 
 test("SessionStart surfaces invalid actionable continuation", () => {
