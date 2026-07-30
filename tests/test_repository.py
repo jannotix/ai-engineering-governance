@@ -26,7 +26,10 @@ class RepositoryTests(unittest.TestCase):
         self.assertEqual(marketplace["plugins"][0]["version"], "2.0.0")
         self.assertEqual(plugin["version"], "2.0.0")
         self.assertEqual(plugin["hooks"], "hooks/hooks.json")
-        self.assertEqual(plugin["mcpServers"], ".mcp.json")
+        server = plugin["mcpServers"]["ai-engineering-governance"]
+        self.assertEqual(server["type"], "stdio")
+        self.assertEqual(server["command"], "node")
+        self.assertIn("runtime/mcp-server.js", " ".join(server["args"]))
         self.assertEqual(plugin["license"], "FSL-1.1-MIT")
         self.assertEqual(plugin["author"]["name"], "Gianluca Iannotta")
 
