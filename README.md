@@ -2,36 +2,25 @@
 
 AI Engineering Governance is a model- and provider-agnostic ZCode plugin for controlled product discovery, software delivery, independent review and production readiness.
 
-Version **2.0.0 — Deterministic Runtime Governance** combines prompt-level engineering governance with local content hashing, typed state, ZCode hooks and a zero-dependency MCP runtime.
+Version **2.0.0 — Deterministic Runtime Governance** combines prompt-level engineering governance with local content hashing, typed state, native ZCode hooks and a zero-dependency MCP runtime.
 
 > Community project. Not affiliated with or maintained by the ZCode team.
 
 ## Why it exists
 
-A capable coding model can still:
+A capable coding model can still misunderstand requirements, plan from stale context, broaden scope, report unexecuted validation, review a different candidate from the one later committed, reuse stale evidence or stop at an intermediate phase while claiming completion.
 
-- implement a misunderstood or incomplete requirement;
-- plan from stale or unnecessarily broad context;
-- expand scope or add avoidable dependencies;
-- report tests or integrations that were not actually executed;
-- review a different candidate from the one later committed;
-- reuse stale evidence after source, toolchain or policy changes;
-- treat one model lesson as permanent project policy;
-- stop at an intermediate phase while calling the workflow complete.
+The plugin separates authority, persists canonical state, freezes exact candidates, requires evidence and fails closed when required proof is missing, stale or inconsistent.
 
-The plugin separates authority, persists canonical project state, freezes exact candidates, requires evidence and fails closed when required proof is missing or stale.
-
-## Runtime requirement
-
-The 2.0.0 deterministic runtime requires:
+## Requirements
 
 - ZCode with plugin, Hook and MCP support;
 - Git for staged, commit and base-diff candidate projections;
-- **Node.js 22 or newer** available on `PATH`.
+- **Node.js 22.13.0 or newer** on `PATH`.
 
-The runtime uses only Node.js built-ins. It installs no package, daemon, provider SDK or external service. Local governed memory uses `node:sqlite` and remains outside the project repository.
+Node 22.13.0 is required because governed memory uses `node:sqlite` without an experimental command-line flag. The runtime uses only Node.js built-ins and installs no package, provider SDK, daemon or external service.
 
-When Node.js or a required runtime capability is unavailable, deterministic proof is `UNAVAILABLE` or `BLOCKED`; the model may not claim that the gate passed.
+When a required runtime capability is unavailable, proof is `UNAVAILABLE` or `BLOCKED`; the model may not claim that a deterministic gate passed.
 
 ## Installation
 
@@ -47,40 +36,40 @@ When Node.js or a required runtime capability is unavailable, deterministic proo
 /ai-setup
 ```
 
-ZCode model selection remains controlled by the user. The repository contains no provider IDs, model IDs, credentials, subscription details or personal routing preferences.
+ZCode model selection remains controlled by the user. The repository contains no provider IDs, model IDs, credentials, subscriptions or personal routing preferences.
 
 ## Roles
 
 | Role | Responsibility |
 |---|---|
-| Architect | Baseline, adaptive discovery, constructive challenge, product definition, context routing, task planning and execution authorization. |
+| Architect | Baseline, discovery, constructive challenge, product definition, context routing, planning and execution authorization. |
 | Executor | Implements only the approved packet and records exact evidence. |
-| Reviewer | Independently reviews discovery, implementation, regression, runtime and maintainability evidence. |
-| Architecture/Security Reviewer | Independently reviews architecture, security, data, dependency, migration, deployment and recovery risk. |
+| Reviewer | Independently reviews discovery, implementation, regression, runtime and maintainability. |
+| Architecture/Security Reviewer | Independently reviews architecture, security, data, dependencies, migrations, deployment and recovery. |
 | Final Reviewer | Adjudicates required discovery, ELEVATED review, product completeness, governed memory and release readiness. |
 | Arbiter | Resolves material Architect/Executor disagreement before validation. |
 
-Only Executor normally writes production source. Reviewer siblings remain independent and inspect the same frozen candidate before Final Reviewer sees both reports.
+Only Executor normally writes production source. Reviewer siblings inspect the same frozen candidate independently before Final Reviewer receives both reports.
 
 ## Commands
 
-The public command surface remains intentionally small:
+The public command surface remains nine commands:
 
 | Command | Purpose |
 |---|---|
-| `/ai-init` | Initialize or non-destructively upgrade governance state and runtime capability status. |
-| `/ai-setup` | Configure role, review, arbitration, memory and staged-receipt policies. |
+| `/ai-init` | Initialize or non-destructively upgrade governance and runtime state. |
+| `/ai-setup` | Configure roles, review, arbitration, memory and receipt policy. |
 | `/ai-start` | Continue from persisted typed state rather than chat memory. |
-| `/ai-status` | Report product, context, candidate, receipt, evidence, review and next-action state. |
-| `/ai-architect` | Run baseline, adaptive discovery, context routing and implementation-ready planning. |
-| `/ai-execute` | Implement approved work, run verification and freeze the review candidate. |
-| `/ai-review` | Run discovery, STANDARD/ELEVATED task, product-completeness or release review. |
-| `/ai-arbiter` | Resolve a material planning/implementation disagreement. |
+| `/ai-status` | Report product, context, candidate, receipt, evidence, review and next action. |
+| `/ai-architect` | Run baseline, adaptive discovery, context routing and planning. |
+| `/ai-execute` | Implement approved work, verify it and freeze the review candidate. |
+| `/ai-review` | Run discovery, task, completeness or release review. |
+| `/ai-arbiter` | Resolve material planning/implementation disagreement. |
 | `/ai-release` | Assess product completeness and final production readiness. |
 
-There are no redundant `/ai-plan`, `/ai-discover`, `/ai-resume`, `/ai-workflow`, `/ai-metrics`, `/ai-audit` or `/ai-docs` commands.
+No redundant `/ai-plan`, `/ai-discover`, `/ai-resume`, `/ai-workflow`, `/ai-metrics`, `/ai-audit` or `/ai-docs` commands are added.
 
-## Adaptive product governance
+## Product governance
 
 Every request receives:
 
@@ -93,9 +82,7 @@ DISCOVERY_DEPTH:
 LIGHT | STANDARD | DEEP
 ```
 
-Discovery is never skipped. A well-defined patch may use concise `LIGHT` discovery; new products, high-risk changes and materially vague or product-wide work use `DEEP` discovery.
-
-Constructive challenge separates:
+Discovery is never skipped. Constructive challenge separates:
 
 ```text
 USER_OBJECTIVE
@@ -104,7 +91,7 @@ GOVERNANCE_RECOMMENDATION
 FINAL_USER_DECISION
 ```
 
-The Architect explains materially better alternatives rather than agreeing automatically. Only conventional, reversible, low-risk, scope-neutral technical defaults may proceed without approval.
+Only conventional, reversible, low-risk, scope-neutral technical defaults may proceed without approval.
 
 Product-affecting work may use:
 
@@ -118,37 +105,31 @@ Product-affecting work may use:
 └── PRODUCT_DECISIONS.md
 ```
 
-These files are not created as boilerplate for a proven purely technical patch.
+These files are not created as boilerplate for a proven technical-only patch. Capabilities remain `REQUIRED | OPTIONAL | NOT_APPLICABLE | DEFERRED`.
 
-Capability states are:
-
-```text
-REQUIRED | OPTIONAL | NOT_APPLICABLE | DEFERRED
-```
-
-Product completeness is separate from release readiness:
+Product completeness and release readiness are separate:
 
 ```text
 PRODUCT_COMPLETE | PRODUCT_DEFECT | PRODUCT_BLOCKED
 READY_FOR_PRODUCTION | NOT_READY_FOR_PRODUCTION
 ```
 
-A validated task or milestone does not prove that the complete product exists.
-
 ## Deterministic candidate authority
 
-`GOVERNANCE_CANDIDATE_V1` supports four projections:
+`GOVERNANCE_CANDIDATE_V1` supports:
 
 ```text
 workspace | staged | commit | base-diff
 ```
 
-- `workspace` hashes project entries outside root `.git/**` and `.ai/**`, including bytes, modes and symlink targets.
-- `staged` binds the exact Git index modes, blob IDs and tree.
-- `commit` binds a resolved commit and complete tree.
+- `workspace` hashes project entries outside root `.git/**` and `.ai/**`, including bytes, modes and symlink targets;
+- `staged` binds exact Git index modes, blob IDs and tree;
+- `commit` binds a resolved commit and complete tree;
 - `base-diff` binds candidate, base, immutable merge base and raw diff identity.
 
-Changing projection or live content invalidates prior approval. A Git status summary is not candidate identity.
+Governed file paths are constrained to the project and reject symbolic-link or junction traversal. Candidate symlinks are hashed as links rather than followed.
+
+A Git status summary is not candidate identity. Any candidate change invalidates previous approval.
 
 ## Approval receipts and commit gate
 
@@ -158,21 +139,11 @@ After required review PASS, Final Reviewer creates:
 .ai/tasks/<TASK-ID>/approval-receipt.json
 ```
 
-`GOVERNANCE_APPROVAL_RECEIPT_V1` binds:
+`GOVERNANCE_APPROVAL_RECEIPT_V1` binds the candidate, approved requirements, execution packet, verification profile, evidence, both independent reviews and Final Reviewer adjudication.
 
-- candidate identity;
-- approved requirements;
-- execution packet;
-- verification profile;
-- evidence manifest;
-- Implementation Reviewer report;
-- Architecture/Security Reviewer report;
-- Final Reviewer adjudication;
-- authoritative model-family metadata when available.
+A changed candidate or bound artifact returns `APPROVAL_RECEIPT_MISMATCH`. A receipt never renews itself.
 
-Any changed candidate or artifact returns `APPROVAL_RECEIPT_MISMATCH`. A receipt never silently renews itself.
-
-For a local commit, a valid `staged` receipt arms `.ai/runtime/pre-commit.json`. The ZCode `PreToolUse` hook rederives the Git index before `git commit` without a model call. Direct receipt or pointer editing is blocked.
+A valid `staged` receipt may arm `.ai/runtime/pre-commit.json`. The ZCode `PreToolUse` hook rederives the Git index before `git commit` without a model call. Direct and patch-based receipt mutation is blocked.
 
 The plugin does not install a project Git hook automatically. The runtime gate protects commits invoked through ZCode; owner actions outside ZCode remain the owner's responsibility.
 
@@ -189,13 +160,13 @@ Every non-terminal `RUN_STATE.json` contains one typed action:
 }
 ```
 
-or a concrete human decision with explicit choices.
+or a concrete human decision with explicit choices. Narrative `continue`, `retry` or `finish` is not executable authority.
 
-Narrative values such as `continue`, `retry` or `finish` are not executable authority. `/ai-start` reconciles persisted state, Git, candidate, context, evidence, receipt and review before routing the exact next command.
+`/ai-start` reconciles persisted state, Git, candidate, context, evidence, receipt and review before routing the exact next command.
 
-## Context Intelligence
+## Context Intelligence and skills
 
-Each governed task may persist:
+Each task may persist:
 
 ```text
 CONTEXT_BUDGET.json
@@ -211,80 +182,42 @@ DISPATCH → EVALUATE → REFINE
         → CONTEXT_SUFFICIENT | BLOCKED_CONTEXT_GAP
 ```
 
-Cycle three must terminate. Context budget limits waste but never authorizes omission of required security, migration, recovery, public-contract or operational evidence.
+Cycle three must terminate. A budget limits waste but never authorizes omission of required security, migration, recovery, contract or operational evidence.
 
-Skill selection checks:
+Skill selection checks trust, work class, technologies, required tools, conflicts, overlap and estimated context tokens. Skills never authorize source writes, dependency installation, security weakening, requirement changes or external actions.
 
-- source and trust class;
-- work-class and technology applicability;
-- required tools and external dependencies;
-- conflicts and overlapping capabilities;
-- estimated context-token budget;
-- selected sections when declared.
+## Evidence and review
 
-A skill never authorizes source writes, dependency installation, security weakening, requirement changes or external actions.
-
-## Evidence-Driven Verification
-
-Risk dimensions use:
-
-```text
-NONE | LOW | HIGH
-```
-
-Gate applicability uses:
-
-```text
-REQUIRED | CONDITIONAL | NOT_APPLICABLE
-```
-
-Executed evidence uses:
+Risk dimensions use `NONE | LOW | HIGH`. Gate applicability uses `REQUIRED | CONDITIONAL | NOT_APPLICABLE`. Executed evidence uses:
 
 ```text
 PASS | FAIL | UNAVAILABLE | STALE | BLOCKED
 ```
 
-`UNAVAILABLE` and `STALE` never become PASS by assertion.
+Prior evidence is reusable only when it was PASS and the complete dependency map is byte-identical, including candidate, contracts/call paths, validation command, environment/toolchain, policy and selected skill hashes. Any changed dependency returns `EVIDENCE_STALE`.
 
-Prior evidence is reusable only when its previous result was PASS and the complete dependency map is byte-identical, including candidate, affected contracts/call paths, validation command, environment/toolchain, policy hashes and selected skill hashes. Any changed dependency returns `EVIDENCE_STALE`.
+`REVIEW_LENS_MATRIX_V1` always preserves:
 
-Operational Assurance covers preview/runtime targets, critical user flows, objective visual behavior, tool/MCP boundaries, recovery and safe experimentation when applicable.
+- Implementation: correctness, regression, test quality and maintainability;
+- Architecture/Security: architecture, security boundaries, data safety and recovery.
 
-## Risk-derived review lenses
-
-Both ELEVATED reviewers remain mandatory. `REVIEW_LENS_MATRIX_V1` changes focus, not authority.
-
-Implementation baseline:
-
-```text
-CORRECTNESS | REGRESSION | TEST_QUALITY | MAINTAINABILITY
-```
-
-Architecture/Security baseline:
-
-```text
-ARCHITECTURE | SECURITY_BOUNDARIES | DATA_SAFETY | RECOVERY
-```
-
-Risk adds lenses such as authorization, input validation, public contracts, migrations, dependency supply chain, performance, accessibility, deployment, observability, resilience and tool capability.
+Risk adds authorization, input validation, public-contract, migration, dependency, performance, accessibility, deployment, observability, resilience, recovery and tool-capability lenses. Focus changes; reviewer authority does not.
 
 ## Governed engineering memory
 
-Local memory uses:
+Local SQLite memory uses:
 
 ```text
 CANDIDATE | ACTIVE | SUPERSEDED | REJECTED
 ```
 
-Executor and reviewers may propose a lesson. Only Final Reviewer may activate, reject or supersede it after checking scope, candidate, evidence and staleness.
+Executor and reviewers may propose a lesson. Only Final Reviewer may activate, reject or supersede it. Memory is advisory and never outranks current requirements, source, tests, contracts or runtime evidence.
 
-Memory is advisory. Current requirements, source, tests, contracts and runtime evidence remain controlling.
+Policy promotion is never automatic. Eligibility requires at least two distinct validated task occurrences and explicit owner authorization.
 
-Promotion to project policy is never automatic. Eligibility requires at least two distinct validated task occurrences and explicit owner authorization.
+## Native ZCode runtime
 
-## Native ZCode runtime components
-
-The plugin registers:
+The plugin registers verified ZCode events:
 
 ```text
 SessionStart
@@ -292,45 +225,35 @@ PreToolUse
 PostToolUse
 ```
 
-- `SessionStart` reports runtime, typed continuation and receipt state.
-- `PreToolUse` blocks invalid commits, direct receipt mutation, writes to a frozen reviewed target and automatic external actions.
-- `PostToolUse` warns when a mutation may stale candidate, context, evidence or receipt dependencies.
+- `SessionStart` reports runtime, typed continuation and receipt state;
+- `PreToolUse` blocks invalid commits, direct or patch-based receipt mutation, frozen-target writes and automatic external actions;
+- `PostToolUse` warns when mutations may stale candidate, context, evidence or receipt dependencies.
+
+Mutating hook failures are fail-closed. The plugin does not depend on an undocumented Stop hook.
 
 The local stdio MCP server exposes deterministic tools for candidate freeze/verify, receipts, run-state validation, context cycles, skill selection, evidence reuse, review lenses and governed memory.
 
-The plugin intentionally does not depend on an undocumented Stop hook. Completion is controlled through persisted RUN_STATE, exact postconditions, `/ai-start` and ZCode Goal Mode.
-
-## Git and external-action policy
+## Git and external actions
 
 One scoped local commit follows task validation and a current staged receipt.
 
-The plugin blocks automatic:
+The plugin blocks automatic push, PR creation/merge, publication, deployment and production rollback. Those actions require explicit owner authorization and manual execution after reviewing the exact target. Prior authorization is not reusable.
 
-```text
-git push
-PR creation or merge
-publication
-deployment
-production rollback
-```
-
-These actions require explicit owner authorization and must be performed manually after reviewing the exact target. Prior authorization is not reusable.
-
-Plaintext credentials, tokens, keys, passwords, private certificates, production `.env` files and equivalent secrets are excluded from Git by default. If a tracked secret was exposed, ignore rules alone are insufficient: remove it from tracking and assess revocation or rotation.
+Plaintext credentials, tokens, keys, passwords, private certificates, production `.env` files and equivalent secrets are excluded from Git by default. A tracked secret must be removed from tracking and assessed for revocation or rotation.
 
 ## Production scope
 
-`.ai/DEPLOYMENT_SCOPE.md` defines the deployable boundary. Production packages contain only runtime-required files and exclude `.ai/`, tests, development-only documentation, review/evidence artifacts, local tooling, caches, IDE state and plaintext secrets unless an explicit runtime or legal exception applies.
+`.ai/DEPLOYMENT_SCOPE.md` defines the deployable boundary. Production packages exclude `.ai/`, tests, development-only documentation, evidence/review artifacts, local tooling, caches, IDE state and plaintext secrets unless an explicit runtime or legal exception applies.
 
 ## Verification
 
-The repository CI validates:
+CI runs on Linux and Windows and validates:
 
 - marketplace, plugin, Hook, MCP and package JSON;
 - syntax of every runtime and test module;
 - Python repository contracts;
-- Node candidate, receipt, context, evidence, review and memory unit tests;
-- real subprocess simulation of MCP stdio and ZCode Hook input/output;
+- Node candidate, receipt, context, evidence, review, path-safety and memory tests;
+- subprocess simulation of MCP stdio and ZCode Hook input/output;
 - stale documentation and temporary/debug residue;
 - obvious plaintext-secret patterns.
 
