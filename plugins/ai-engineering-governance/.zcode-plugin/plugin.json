@@ -11,5 +11,11 @@
   "skills": "skills",
   "agents": "agents",
   "hooks": "hooks/hooks.json",
-  "mcpServers": ".mcp.json"
+  "mcpServers": {
+    "ai-engineering-governance": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["runtime/mcp-server.js"]
+    }
+  }
 }
