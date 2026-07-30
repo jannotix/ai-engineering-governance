@@ -1,36 +1,30 @@
 ---
-description: Configure project role bindings, adaptive review roles, arbiter mode, and governed delivery mode.
+description: Configure project role bindings, review/arbitration modes and deterministic runtime policy without changing providers or credentials.
 skills: ai-engineering-governance
 ---
 
-Configure the current project's governance settings.
+Read `.ai/CONFIG.md` and ask only for unresolved durable settings:
 
-Read `.ai/CONFIG.md` if present.
+- Architect, Executor and Reviewer role assignments;
+- Architecture/Security and Final Reviewer assignment or external ELEVATED mode;
+- optional Arbiter assignment or external arbitration mode;
+- greenfield or existing installation;
+- whether governed memory is enabled;
+- whether the project will use the optional staged approval-receipt commit gate.
 
-Ask only for unresolved durable settings:
+Write only non-secret configuration. Record fixed policies:
 
-- Architect model or role assignment;
-- Executor model or role assignment;
-- Reviewer model or external-review mode;
-- Architecture/Security Reviewer model when ELEVATED internal review will be used;
-- Final Reviewer model when ELEVATED internal review will be used;
-- optional Arbiter model or external-arbitration mode;
-- greenfield or existing installation.
-
-Do not require Architecture/Security Reviewer or Final Reviewer configuration for projects that choose external ELEVATED review; record the external mode instead.
-
-Write non-secret configuration to `.ai/CONFIG.md`.
-
-Record fixed policies:
-
-- task requirement provenance is canonical;
-- routine tasks use incremental context routing rather than mandatory full rescans;
-- risk/evidence planning is required before execution;
-- `UNAVAILABLE`/`STALE` evidence is never silently PASS;
-- validated tasks require one scoped local commit after required review PASS;
-- Git push requires explicit action-scoped user authorization;
+- canonical requirement provenance and conditional product state;
+- deterministic **candidate projection** and **approval receipt** required where applicable;
+- **actionable continuation** for every non-terminal RUN_STATE;
+- context budget and skill selection before implementation;
+- exact **evidence reuse** and risk-derived **review lens** matrix;
+- governed memory is advisory and Final-Reviewer-controlled;
+- governed paths reject symlink/junction traversal;
+- one scoped local commit only after review PASS and valid staged receipt;
+- automatic push, PR creation/merge, publication and deployment are blocked;
 - plaintext secrets are denied in Git by default.
 
-Do not change provider credentials or invent model IDs. The user controls model selection in ZCode.
+Verify Node.js 22.13.0+, unflagged `node:sqlite`, plugin hook registration and MCP availability. Record `BLOCKED_RUNTIME` when unavailable; do not weaken the contract.
 
-Append configuration changes to `.ai/PROJECT_HISTORY.md` without recording secret values.
+Do not change provider credentials or invent model IDs. Append configuration changes to project history without secret values and emit `GOVERNANCE_RESULT`.

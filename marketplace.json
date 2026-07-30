@@ -1,14 +1,14 @@
 {
   "name": "ai-engineering-governance",
-  "description": "Product-lifecycle and software-engineering governance for model-agnostic ZCode workflows.",
+  "description": "Deterministic product-lifecycle and software-engineering governance for model-agnostic ZCode workflows.",
   "plugins": [
     {
       "name": "ai-engineering-governance",
       "source": "./plugins/ai-engineering-governance",
-      "description": "Model-agnostic product and engineering governance with adaptive discovery, constructive challenge, product completeness, requirement provenance, incremental context, evidence-driven verification, operational assurance, independent review, secure Git policy, and production release gates.",
-      "version": "1.2.0",
+      "description": "Model-agnostic governance with adaptive discovery, candidate authority, content-bound approval receipts, context intelligence, exact evidence reuse, governed memory, runtime hooks, local MCP tools, independent review and production release gates.",
+      "version": "2.0.0",
       "category": "development",
-      "tags": ["engineering", "governance", "product-discovery", "sdd", "ddd", "testing", "review", "release"],
+      "tags": ["engineering", "governance", "deterministic-runtime", "product-discovery", "evidence", "mcp", "hooks", "review", "release"],
       "strict": true
     }
   ]

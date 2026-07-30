@@ -1,51 +1,26 @@
 ---
-description: Continue the current project from persisted governed state, reconciling product state, task run state, Git target, provenance/context, evidence freshness, approvals, and role boundaries.
+description: Continue from persisted governance and Git state using ACTIONABLE_CONTINUATION_V1, candidate/receipt verification, context/evidence freshness and role boundaries.
 skills: ai-engineering-governance
 ---
 
-Read `.ai/STATUS.md`, `.ai/CONFIG.md`, latest `.ai/PROJECT_HISTORY.md`, reusable baseline/context state, applicable `.ai/product/` state, current Git head/status/diff, and current task `RUN_STATE.json` when active.
+Read `.ai/STATUS.md`, `.ai/CONFIG.md`, latest project history, product state, baseline/indexes, current Git head/status/diff and active task `RUN_STATE.json`. Do not resume from chat memory alone.
 
-Do not resume from chat memory alone.
+1. Validate **actionable continuation** using the deterministic runtime. Narrative `continue`, `retry` or `finish` is invalid.
+2. Reconcile provenance, product blueprint/capabilities, context budget/retrieval/skill selection, current Git state, verification profile and Operational Assurance inputs.
+3. Re-derive any persisted **candidate projection** and verify any **approval receipt** or armed staged pre-commit pointer.
+4. Run exact **evidence reuse** checks and invalidate only dependent evidence/reviews whose candidate, command, environment, policy or skill inputs changed.
+5. Retrieve only relevant ACTIVE governed memory metadata; memory is advisory and may not override current evidence.
+6. Route exactly to the persisted `/ai-*` command and arguments, or report the recorded human decision.
 
-Before routing, reconcile:
+Typical routing:
 
-- request classification, discovery depth/status and material unknown count;
-- product state, product scope approval and user approval;
-- applicable product blueprint version, capability matrix and append-only decisions;
-- canonical task requirement provenance and unprocessed `STEERING.md`;
-- baseline/context freshness;
-- current Git target and dirty-worktree state;
-- `CONTEXT_MANIFEST.md` target;
-- task plan authorization and capability traceability;
-- `VERIFICATION_PROFILE.md` and dependent evidence freshness;
-- dependency/lockfile, migration, generator, runtime/tooling and Operational Assurance inputs;
-- frozen discovery/review target state;
-- current baseline/discovery/task/product-completeness cycle.
+- baseline/discovery/planning → `/ai-architect`;
+- implementation → `/ai-execute`;
+- frozen review → `/ai-review`;
+- arbitration → `/ai-arbiter`;
+- validated task without commit → Executor verifies staged receipt and commits locally;
+- release candidate → `/ai-release`.
 
-Invalidate only evidence/reviews whose inputs changed. Do not fabricate historical discovery, product facts, capability status, safepoints, dependency admission, approvals, runtime execution or review results.
+When safe reconstruction is impossible, stop `BLOCKED` or `BLOCKED_CONTEXT_GAP`; never fabricate historical approval, safepoints, runtime execution, receipt, evidence reuse or memory adjudication.
 
-Routing:
-
-- INTAKE, BASELINING, PLANNING → Architect.
-- PRODUCT_DISCOVERY → `/ai-architect` continues adaptive discovery.
-- DISCOVERY_REVIEW → `/ai-review` in `DISCOVERY_REVIEW` mode.
-- PRODUCT_SCOPE_APPROVAL → Architect reports exact required authoritative decision.
-- TASK_PLANNING → Architect.
-- READY_FOR_EXECUTION, IMPLEMENTING, TASK_VERIFYING → Executor.
-- BLOCKED_ARCHITECTURE → Architect.
-- BLOCKED_EXTERNAL → report required authoritative input/access.
-- ARBITRATION_REQUIRED or ARBITRATION_IN_PROGRESS → `/ai-arbiter`.
-- READY_FOR_REVIEW or VERIFYING → `/ai-review` using current STANDARD/ELEVATED profile.
-- TASK_VALIDATED → Executor performs scoped local commit if not already committed.
-- MILESTONE_VALIDATED or PRODUCT_INCOMPLETE → Architect reconciles remaining required capability IDs and plans next vertical milestone/task.
-- PRODUCT_COMPLETE → route to release planning only when requested and release evidence is ready.
-- LOCAL_COMMITTED → Architect plans/re-authorizes next task.
-- FIX_REQUIRED or review defect → Architect for PLAN_DEFECT/DISCOVERY_DEFECT/product defect; Executor only after Architect re-authorizes implementation defects.
-- RELEASE_CANDIDATE or ADVERSARIAL_REVIEW → `/ai-release`.
-- READY_FOR_PRODUCTION → report no pending governed work unless new requirements exist.
-
-After three failed cycles at the same baseline, discovery, task-adjudication or product-completeness gate, stop fail-closed with `HUMAN_INPUT_REQUIRED: YES`.
-
-When safe reconstruction is impossible, stop with BLOCKED and state missing authoritative evidence/input.
-
-Respect `.ai/CONFIG.md` role bindings. Never push Git changes without explicit action-scoped authorization. Emit `GOVERNANCE_RESULT`.
+Emit `GOVERNANCE_RESULT` including candidate and receipt status. Never push or deploy.

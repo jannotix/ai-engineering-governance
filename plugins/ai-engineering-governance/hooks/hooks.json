@@ -1,0 +1,52 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "process",
+            "command": "node",
+            "args": [
+              "${ZCODE_PLUGIN_ROOT}/hooks/governance-hook.js",
+              "session-start"
+            ],
+            "timeoutMs": 15000
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Write|Edit|ApplyPatch",
+        "hooks": [
+          {
+            "type": "process",
+            "command": "node",
+            "args": [
+              "${ZCODE_PLUGIN_ROOT}/hooks/governance-hook.js",
+              "pre-tool-use"
+            ],
+            "timeoutMs": 15000
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Write|Edit|ApplyPatch",
+        "hooks": [
+          {
+            "type": "process",
+            "command": "node",
+            "args": [
+              "${ZCODE_PLUGIN_ROOT}/hooks/governance-hook.js",
+              "post-tool-use"
+            ],
+            "timeoutMs": 15000
+          }
+        ]
+      }
+    ]
+  }
+}
