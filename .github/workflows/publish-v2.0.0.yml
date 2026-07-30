@@ -75,5 +75,4 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "AI Engineering Governance 2.0.0 — Deterministic Runtime Governance" \
-            --notes-file RELEASE_NOTES_2.0.0.md \
-            --verify-tag=false
+            --notes-file RELEASE_NOTES_2.0.0.md
