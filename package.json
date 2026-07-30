@@ -1,0 +1,14 @@
+{
+  "name": "ai-engineering-governance",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Development and verification scripts for the ZCode AI Engineering Governance plugin.",
+  "scripts": {
+    "test:runtime": "node --test tests/runtime/*.test.js",
+    "check:runtime": "node --check plugins/ai-engineering-governance/hooks/governance-hook.js && node --check plugins/ai-engineering-governance/runtime/mcp-server.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {}
+}
