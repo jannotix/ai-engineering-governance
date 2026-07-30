@@ -10,7 +10,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,10 +20,28 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
       - name: Validate JSON manifests
         run: |
           python -m json.tool marketplace.json >/dev/null
           python -m json.tool plugins/ai-engineering-governance/.zcode-plugin/plugin.json >/dev/null
+          python -m json.tool plugins/ai-engineering-governance/.mcp.json >/dev/null
+          python -m json.tool plugins/ai-engineering-governance/hooks/hooks.json >/dev/null
+          python -m json.tool package.json >/dev/null
+
+      - name: Check runtime syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check plugins/ai-engineering-governance/hooks/governance-hook.js
+          node --check plugins/ai-engineering-governance/runtime/mcp-server.js
+          for file in plugins/ai-engineering-governance/runtime/lib/*.js tests/runtime/*.test.js; do
+            node --check "$file"
+          done
 
       - name: Run repository tests
         shell: bash
@@ -31,13 +49,21 @@ jobs:
           set -o pipefail
           python -m unittest discover -s tests -v 2>&1 | tee unittest-output.txt
 
-      - name: Upload unittest diagnostics
+      - name: Run deterministic runtime tests
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run test:runtime 2>&1 | tee runtime-test-output.txt
+
+      - name: Upload verification diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: unittest-output
-          path: unittest-output.txt
-          if-no-files-found: error
+          name: verification-output
+          path: |
+            unittest-output.txt
+            runtime-test-output.txt
+          if-no-files-found: warn
           retention-days: 7
 
       - name: Verify repository hygiene
