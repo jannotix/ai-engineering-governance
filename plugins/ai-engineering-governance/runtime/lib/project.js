@@ -5,10 +5,28 @@ const path = require("node:path")
 const { spawnSync } = require("node:child_process")
 const { canonicalStringify } = require("./canonical.js")
 
+function physicalPath(value) {
+  const absolute = path.resolve(value)
+  const missing = []
+  let current = absolute
+  while (true) {
+    try {
+      const physical = fs.realpathSync.native(current)
+      return path.join(physical, ...missing.reverse())
+    } catch (error) {
+      if (!error || error.code !== "ENOENT") throw error
+      const parent = path.dirname(current)
+      if (parent === current) return absolute
+      missing.push(path.basename(current))
+      current = parent
+    }
+  }
+}
+
 function existingDirectory(value) {
   if (!value) return null
   try {
-    const resolved = path.resolve(value)
+    const resolved = physicalPath(value)
     return fs.statSync(resolved).isDirectory() ? resolved : null
   } catch {
     return null
@@ -16,22 +34,30 @@ function existingDirectory(value) {
 }
 
 function projectRoot(projectDir) {
-  const candidate = existingDirectory(projectDir) || existingDirectory(process.env.ZCODE_PROJECT_DIR) || existingDirectory(process.env.CLAUDE_PROJECT_DIR) || process.cwd()
+  const candidate = existingDirectory(projectDir) || existingDirectory(process.env.ZCODE_PROJECT_DIR) || existingDirectory(process.env.CLAUDE_PROJECT_DIR) || physicalPath(process.cwd())
   const git = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd: candidate, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] })
-  if (git.status === 0 && git.stdout.trim()) return path.resolve(git.stdout.trim())
-  return path.resolve(candidate)
+  if (git.status === 0 && git.stdout.trim()) return physicalPath(git.stdout.trim())
+  return physicalPath(candidate)
 }
 
 function isInside(root, candidate) {
-  const relative = path.relative(path.resolve(root), path.resolve(candidate))
+  const rootPath = physicalPath(root)
+  const candidatePath = physicalPath(candidate)
+  const relative = path.relative(rootPath, candidatePath)
   return relative === "" || (!path.isAbsolute(relative) && relative !== ".." && !relative.startsWith(`..${path.sep}`))
 }
 
-function assertNoLinkTraversal(root, resolved) {
-  const relative = path.relative(path.resolve(root), path.resolve(resolved))
-  if (!relative) return
+function assertNoLinkTraversal(root, originalResolved, physicalResolved) {
+  const rootPath = physicalPath(root)
+  if (!isInside(rootPath, physicalResolved)) throw new Error(`path escapes project root: ${originalResolved}`)
+
+  const lexicalRelative = path.relative(path.resolve(root), path.resolve(originalResolved))
+  if (lexicalRelative === "" || path.isAbsolute(lexicalRelative) || lexicalRelative === ".." || lexicalRelative.startsWith(`..${path.sep}`)) {
+    return
+  }
+
   let current = path.resolve(root)
-  for (const segment of relative.split(path.sep)) {
+  for (const segment of lexicalRelative.split(path.sep)) {
     current = path.join(current, segment)
     let stat
     try {
@@ -45,16 +71,19 @@ function assertNoLinkTraversal(root, resolved) {
 }
 
 function resolveInside(root, value) {
-  const rootPath = path.resolve(root)
-  const resolved = path.resolve(rootPath, value)
+  const rootPath = physicalPath(root)
+  const originalResolved = path.resolve(root, value)
+  const resolved = physicalPath(originalResolved)
   if (!isInside(rootPath, resolved)) throw new Error(`path escapes project root: ${value}`)
-  assertNoLinkTraversal(rootPath, resolved)
+  assertNoLinkTraversal(root, originalResolved, resolved)
   return resolved
 }
 
 function relativePath(root, candidate) {
-  if (!isInside(root, candidate)) throw new Error(`path escapes project root: ${candidate}`)
-  return path.relative(root, candidate).split(path.sep).join("/") || "."
+  const rootPath = physicalPath(root)
+  const candidatePath = physicalPath(candidate)
+  if (!isInside(rootPath, candidatePath)) throw new Error(`path escapes project root: ${candidate}`)
+  return path.relative(rootPath, candidatePath).split(path.sep).join("/") || "."
 }
 
 function ensureDir(dirPath) {
@@ -118,6 +147,7 @@ module.exports = {
   ensureDir,
   existingDirectory,
   isInside,
+  physicalPath,
   projectRoot,
   readJson,
   relativePath,
