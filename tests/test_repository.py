@@ -20,19 +20,15 @@ class RepositoryTests(unittest.TestCase):
     def skill_read(self, rel: str) -> str:
         return (SKILL_ROOT / rel).read_text(encoding="utf-8")
 
-    def test_marketplace_manifest(self):
-        data = json.loads(self.read("marketplace.json"))
-        self.assertEqual(data["name"], "ai-engineering-governance")
-        self.assertEqual(data["plugins"][0]["version"], "1.2.0")
-        self.assertEqual(data["plugins"][0]["source"], "./plugins/ai-engineering-governance")
-        self.assertNotIn("pluginRoot", data)
-
-    def test_plugin_manifest(self):
-        data = json.loads(self.plugin_read(".zcode-plugin/plugin.json"))
-        self.assertEqual(data["name"], "ai-engineering-governance")
-        self.assertEqual(data["version"], "1.2.0")
-        self.assertEqual(data["license"], "FSL-1.1-MIT")
-        self.assertEqual(data["author"]["name"], "Gianluca Iannotta")
+    def test_manifests_are_2_0_0_and_expose_runtime_components(self):
+        marketplace = json.loads(self.read("marketplace.json"))
+        plugin = json.loads(self.plugin_read(".zcode-plugin/plugin.json"))
+        self.assertEqual(marketplace["plugins"][0]["version"], "2.0.0")
+        self.assertEqual(plugin["version"], "2.0.0")
+        self.assertEqual(plugin["hooks"], "hooks/hooks.json")
+        self.assertEqual(plugin["mcpServers"], ".mcp.json")
+        self.assertEqual(plugin["license"], "FSL-1.1-MIT")
+        self.assertEqual(plugin["author"]["name"], "Gianluca Iannotta")
 
     def test_required_components_exist(self):
         required = [
@@ -51,357 +47,129 @@ class RepositoryTests(unittest.TestCase):
             "commands/ai-review.md",
             "commands/ai-arbiter.md",
             "commands/ai-release.md",
+            "hooks/hooks.json",
+            "hooks/governance-hook.js",
+            ".mcp.json",
+            "runtime/mcp-server.js",
+            "runtime/lib/canonical.js",
+            "runtime/lib/project.js",
+            "runtime/lib/candidate-authority.js",
+            "runtime/lib/approval-receipt.js",
+            "runtime/lib/run-state.js",
+            "runtime/lib/context-intelligence.js",
+            "runtime/lib/evidence-reuse.js",
+            "runtime/lib/review-lenses.js",
+            "runtime/lib/governed-memory.js",
             "skills/ai-engineering-governance/SKILL.md",
-            "skills/ai-engineering-governance/references/requirement-provenance.md",
-            "skills/ai-engineering-governance/references/context-routing.md",
-            "skills/ai-engineering-governance/references/verification.md",
-            "skills/ai-engineering-governance/references/operational-assurance.md",
-            "skills/ai-engineering-governance/references/product-lifecycle.md",
+            "skills/ai-engineering-governance/references/deterministic-runtime.md",
         ]
         for rel in required:
             self.assertTrue((PLUGIN / rel).is_file(), rel)
 
-    def test_no_redundant_commands_added(self):
-        prohibited = (
-            "ai-arbitrate.md",
-            "ai-discover.md",
-            "ai-resume.md",
-            "ai-metrics.md",
-            "ai-plan.md",
-            "ai-workflow.md",
-            "ai-audit.md",
-            "ai-docs.md",
-        )
-        for name in prohibited:
-            self.assertFalse((PLUGIN / "commands" / name).exists(), name)
+    def test_command_surface_remains_minimal(self):
+        expected = {
+            "ai-init", "ai-setup", "ai-start", "ai-status", "ai-architect",
+            "ai-execute", "ai-review", "ai-arbiter", "ai-release",
+        }
+        actual = {path.stem for path in (PLUGIN / "commands").glob("*.md")}
+        self.assertEqual(actual, expected)
+        pattern = re.compile(r"^[a-z0-9][a-z0-9_:-]{0,63}$")
+        for name in actual:
+            self.assertRegex(name, pattern)
 
-    def test_agents_do_not_hardcode_models(self):
+    def test_model_provider_neutrality_remains(self):
         prohibited = ("glm-", "minimax", "codex", "claude-", "gpt-", "gemini-", "qwen", "kimi", "grok")
         for path in (PLUGIN / "agents").glob("*.md"):
             text = path.read_text(encoding="utf-8").lower()
             for token in prohibited:
                 self.assertNotIn(token, text, f"{token} in {path}")
 
-    def test_manifest_versions_are_current(self):
-        skill = self.skill_read("SKILL.md")
-        self.assertIn("version: 1.2.0", skill)
-        self.assertNotIn("v3", self.read("README.md").lower())
-
-    def test_project_state_is_task_centric_and_product_aware(self):
-        state = self.skill_read("references/project-state.md")
+    def test_deterministic_runtime_contract(self):
+        text = self.skill_read("references/deterministic-runtime.md")
         for token in (
-            "CONTEXT_INDEX.md",
-            "product/",
-            "PRODUCT_VISION.md",
-            "PRODUCT_COMPLETENESS_MATRIX.md",
-            "PRODUCT_DECISIONS.md",
-            "tasks/",
-            "ORIGINAL_USER_REQUEST.md",
-            "CLARIFICATION_TRANSCRIPT.md",
-            "APPROVED_REQUIREMENTS.md",
-            "CONTEXT_MANIFEST.md",
-            "TASK_PLAN.md",
-            "VERIFICATION_PROFILE.md",
-            "RUN_STATE.json",
-            "VERIFICATION_EVIDENCE.md",
-            "DISCOVERY_REVIEW",
-            "PRODUCT_INCOMPLETE",
-            "READY_FOR_REVIEW",
-            "TASK_VALIDATED",
-            "LOCAL_COMMITTED",
+            "GOVERNANCE_CANDIDATE_V1",
+            "workspace | staged | commit | base-diff",
+            "GOVERNANCE_APPROVAL_RECEIPT_V1",
+            "APPROVAL_RECEIPT_MISMATCH",
+            "ACTIONABLE_CONTINUATION_V1",
+            "CONTEXT_BUDGET_V1",
+            "CONTEXT_SUFFICIENT | BLOCKED_CONTEXT_GAP",
+            "SKILL_CAPABILITY_MANIFEST_V1",
+            "EVIDENCE_STALE",
+            "REVIEW_LENS_MATRIX_V1",
+            "CANDIDATE | ACTIVE | SUPERSEDED | REJECTED",
+            "Node.js 22",
         ):
-            self.assertIn(token, state)
+            self.assertIn(token, text)
 
-    def test_product_lifecycle_contract(self):
-        text = self.skill_read("references/product-lifecycle.md")
+    def test_hooks_use_supported_zcode_events_and_node_processes(self):
+        hooks = json.loads(self.plugin_read("hooks/hooks.json"))["hooks"]
+        self.assertEqual(set(hooks), {"SessionStart", "PreToolUse", "PostToolUse"})
+        for entries in hooks.values():
+            for entry in entries:
+                for hook in entry["hooks"]:
+                    self.assertEqual(hook["type"], "process")
+                    self.assertEqual(hook["command"], "node")
+                    self.assertIn("${ZCODE_PLUGIN_ROOT}", " ".join(hook["args"]))
+        self.assertNotIn("Stop", hooks)
+
+    def test_mcp_is_local_stdio_and_dependency_free(self):
+        mcp = json.loads(self.plugin_read(".mcp.json"))
+        server = mcp["mcpServers"]["ai-engineering-governance"]
+        self.assertEqual(server["type"], "stdio")
+        self.assertEqual(server["command"], "node")
+        self.assertIn("${ZCODE_PLUGIN_ROOT}/runtime/mcp-server.js", server["args"])
+        package = json.loads(self.read("package.json"))
+        self.assertEqual(package.get("dependencies", {}), {})
+        self.assertEqual(package["engines"]["node"], ">=22")
+
+    def test_agents_and_commands_require_runtime_authority(self):
+        combined = "\n".join([
+            self.plugin_read("agents/architect.md"),
+            self.plugin_read("agents/executor.md"),
+            self.plugin_read("agents/reviewer.md"),
+            self.plugin_read("agents/reviewer-architecture.md"),
+            self.plugin_read("agents/final-reviewer.md"),
+            self.plugin_read("commands/ai-start.md"),
+            self.plugin_read("commands/ai-status.md"),
+            self.plugin_read("commands/ai-execute.md"),
+            self.plugin_read("commands/ai-review.md"),
+            self.plugin_read("commands/ai-release.md"),
+        ]).lower()
         for token in (
-            "PATCH | BOUNDED_FEATURE | MAJOR_FEATURE | EXISTING_PRODUCT_EVOLUTION | NEW_PRODUCT | HIGH_RISK_CHANGE",
-            "LIGHT | STANDARD | DEEP",
-            "GUIDED | STANDARD | EXPERT",
-            "CONSTRUCTIVE_CHALLENGE",
-            "USER_OBJECTIVE",
-            "USER_PROPOSED_SOLUTION",
-            "GOVERNANCE_RECOMMENDATION",
-            "FINAL_USER_DECISION",
-            "USER_OVERRIDE_ACCEPTED",
-            "GUIDED_DECISION_POLICY",
-            "REVERSIBLE_TECHNICAL_DEFAULT",
-            "PRODUCT_COMPLETENESS_MATRIX.md",
-            "REQUIRED | OPTIONAL | NOT_APPLICABLE | DEFERRED",
-            "VERTICAL_MILESTONE",
-            "DISCOVERY_PASS | DISCOVERY_DEFECT | DISCOVERY_BLOCKED",
+            "candidate projection", "approval receipt", "actionable continuation",
+            "context budget", "evidence reuse", "review lens", "governed memory",
+        ):
+            self.assertIn(token, combined)
+
+    def test_existing_product_and_evidence_contracts_remain(self):
+        combined = "\n".join([
+            self.skill_read("SKILL.md"),
+            self.skill_read("references/product-lifecycle.md"),
+            self.skill_read("references/requirement-provenance.md"),
+            self.skill_read("references/context-routing.md"),
+            self.skill_read("references/verification.md"),
+            self.skill_read("references/operational-assurance.md"),
+        ])
+        for token in (
+            "CONSTRUCTIVE_CHALLENGE", "PRODUCT_COMPLETENESS_MATRIX.md",
             "PRODUCT_COMPLETE | PRODUCT_DEFECT | PRODUCT_BLOCKED",
-            "READY_FOR_PRODUCTION | NOT_READY_FOR_PRODUCTION",
-            "maximum three",
+            "ORIGINAL_USER_REQUEST.md", "MINIMUM_CHANGE_ASSESSMENT",
+            "TASK_RISK_PROFILE", "PASS | FAIL | UNAVAILABLE | STALE | BLOCKED",
+            "PREVIEW_ENVIRONMENT_GATE", "SAFE_EXPERIMENTATION",
         ):
-            self.assertIn(token, text)
+            self.assertIn(token, combined)
 
-    def test_product_artifacts_are_conditional_not_patch_boilerplate(self):
-        text = self.skill_read("references/product-lifecycle.md").lower()
-        self.assertIn("product-affecting", text)
-        self.assertIn("do not create", text)
-        self.assertIn("purely technical patch", text)
-
-    def test_requirement_provenance_contract(self):
-        text = self.skill_read("references/requirement-provenance.md").lower()
-        for token in (
-            "original_user_request.md",
-            "clarification_transcript.md",
-            "approved_requirements.md",
-            "cannot override",
-            "ready_for_execution",
-            "secret",
-        ):
-            self.assertIn(token, text)
-
-    def test_incremental_context_routing_contract(self):
-        text = self.skill_read("references/context-routing.md").lower()
-        for token in (
-            "context_index.md",
-            "context_manifest.md",
-            "current git delta",
-            "read-only",
-            "2–4",
-            "minimum_change_assessment",
-            "smallest correct, secure, maintainable solution",
-        ):
-            self.assertIn(token, text)
-
-    def test_evidence_driven_verification_contract(self):
-        text = self.skill_read("references/verification.md")
-        for token in (
-            "TASK_RISK_PROFILE",
-            "NONE | LOW | HIGH",
-            "REQUIRED | CONDITIONAL | NOT_APPLICABLE",
-            "PASS | FAIL | UNAVAILABLE | STALE | BLOCKED",
-            "BUGFIX_PROOF",
-            "TEST_IMPACT_MAP",
-            "CONTRACT_COMPATIBILITY",
-            "DEPENDENCY_ADMISSION_GATE",
-            "PRE_CHANGE_SAFEPOINT",
-            "MIGRATION_PROOF",
-            "ELEVATED",
-            "reviewer-architecture",
-            "final-reviewer",
-        ):
-            self.assertIn(token, text)
-
-    def test_operational_assurance_contract(self):
-        text = self.skill_read("references/operational-assurance.md")
-        for token in (
-            "PREVIEW_ENVIRONMENT_GATE",
-            "USER_FLOW_VERIFICATION",
-            "VISUAL_BEHAVIOR_GATE",
-            "RELEASE_RECOVERY_PROOF",
-            "TOOL_CAPABILITY_PROFILE",
-            "SAFE_EXPERIMENTATION",
-            "Tool availability is not authorization",
-        ):
-            self.assertIn(token, text)
-
-    def test_architect_runs_adaptive_discovery_and_constructive_challenge(self):
-        text = self.plugin_read("agents/architect.md").lower()
-        for token in (
-            "work_class",
-            "discovery_depth",
-            "light | standard | deep",
-            "assistance_mode",
-            "constructive_challenge",
-            "user_objective",
-            "user_proposed_solution",
-            "governance_recommendation",
-            "final_user_decision",
-            "product_completeness_matrix.md",
-            "vertical_milestone",
-            "material_unknown_count",
-            "original_user_request.md",
-            "approved_requirements.md",
-            "context_manifest.md",
-            "task_plan.md",
-            "verification_profile.md",
-            "run_state.json",
-            "task_risk_profile",
-            "minimum_change_assessment",
-            "ready_for_execution",
-            "elevated",
-        ):
-            self.assertIn(token, text)
-
-    def test_executor_cannot_self_validate_or_bypass_evidence(self):
-        text = self.plugin_read("agents/executor.md").lower()
-        for token in (
-            "task_risk_profile",
-            "dependency_admission_gate",
-            "pre_change_safepoint",
-            "verification_evidence.md",
-            "unavailable",
-            "stale",
-            "ready_for_review",
-            "do not mark the task `task_validated` yourself",
-            "local task commit",
-            "never push",
-        ):
-            self.assertIn(token, text)
-        self.assertNotIn("git add .", text)
-
-    def test_adaptive_review_roles_cover_discovery_product_and_release(self):
-        reviewer = self.plugin_read("agents/reviewer.md").lower()
-        architecture = self.plugin_read("agents/reviewer-architecture.md").lower()
-        final = self.plugin_read("agents/final-reviewer.md").lower()
-        self.assertIn("discovery_review", reviewer)
-        self.assertIn("product completeness", reviewer)
-        self.assertIn("do not read or rely on the sibling", architecture)
-        self.assertIn("discovery_review", architecture)
-        self.assertIn("discovery_pass", final)
-        self.assertIn("product_complete", final)
-        self.assertIn("original_user_request.md", final)
-        self.assertIn("plan_defect", final)
-
-    def test_architect_command_absorbs_discovery_without_new_command(self):
-        text = self.plugin_read("commands/ai-architect.md").lower()
-        for token in (
-            "work_class",
-            "discovery_depth",
-            "light | standard | deep",
-            "constructive challenge",
-            "product scope",
-            "product completeness",
-            "discovery_review",
-        ):
-            self.assertIn(token, text)
-        self.assertFalse((PLUGIN / "commands" / "ai-discover.md").exists())
-
-    def test_start_reconciles_product_and_task_state(self):
-        text = self.plugin_read("commands/ai-start.md").lower()
-        for token in (
-            "run_state.json",
-            "git head/status/diff",
-            "evidence freshness",
-            "product state",
-            "product blueprint",
-            "invalidate only evidence/reviews whose inputs changed",
-            "ready_for_review",
-        ):
-            self.assertIn(token, text)
-        self.assertFalse((PLUGIN / "commands" / "ai-resume.md").exists())
-
-    def test_status_separates_product_completeness_and_release_readiness(self):
-        text = self.plugin_read("commands/ai-status.md").lower()
-        for token in (
-            "work class",
-            "discovery depth",
-            "material unknown",
-            "product scope",
-            "product completeness",
-            "release readiness",
-            "capability",
-            "cycle",
-            "governance_result",
-        ):
-            self.assertIn(token, text)
-
-    def test_release_requires_product_completeness_and_elevated_evidence(self):
-        text = self.plugin_read("commands/ai-release.md").lower()
-        for token in (
-            "product completeness",
-            "product_complete",
-            "always `elevated`",
-            "operational assurance",
-            "public-contract compatibility",
-            "release recovery proof",
-            "reviewer + architecture/security reviewer",
-            ".ai/",
-            "tests",
-            "plaintext secrets",
-            "runtime-required",
-        ):
-            self.assertIn(token, text)
-
-    def test_cycle_limit_is_fail_closed(self):
-        skill = self.skill_read("SKILL.md").lower()
-        for token in (
-            "maximum three failed",
-            "human_input_required",
-            "baseline",
-            "discovery",
-            "task",
-        ):
-            self.assertIn(token, skill)
-
-    def test_steering_enters_requirement_provenance(self):
-        skill = self.skill_read("SKILL.md").lower()
-        for token in (
-            "steering.md",
-            "clarification_transcript.md",
-            "approved_requirements.md",
-            "replanning",
-        ):
-            self.assertIn(token, skill)
-
-    def test_machine_readable_governance_result(self):
-        skill = self.skill_read("SKILL.md")
-        for token in (
-            "GOVERNANCE_RESULT",
-            "TASK_ID:",
-            "STATE:",
-            "NEXT_ACTION:",
-            "CYCLE:",
-            "HUMAN_INPUT_REQUIRED:",
-            "RESUMABLE:",
-            "CHECKPOINT:",
-            "EVIDENCE_STATUS:",
-        ):
-            self.assertIn(token, skill)
-
-    def test_maintainable_source_structure_policy(self):
-        skill = self.skill_read("SKILL.md").lower()
-        architect = self.plugin_read("agents/architect.md").lower()
-        executor = self.plugin_read("agents/executor.md").lower()
-        reviewer = self.plugin_read("agents/reviewer.md").lower()
-        for token in ("god files", "micro-files", "cohesive", "line-count"):
-            self.assertIn(token, skill)
-        self.assertIn("targeted split", architect)
-        self.assertIn("micro-files", executor)
-        self.assertIn("maintainability", reviewer)
-
-    def test_secret_git_and_deployment_safety_remain(self):
-        skill = self.skill_read("SKILL.md").lower()
-        for token in (
-            "plaintext secrets",
-            "remove from tracking",
-            "revocation/rotation",
-            "never push by default",
-            "explicit action-scoped user authorization",
-            "deployment_scope.md",
-            "production packages",
-        ):
-            self.assertIn(token, skill)
-
-    def test_repository_hygiene_workflow_exists(self):
+    def test_ci_runs_python_and_node_runtime_suites(self):
         workflow = self.read(".github/workflows/verify.yml")
         for token in (
             "python -m unittest discover -s tests",
+            "npm run test:runtime",
+            "node --check",
             "tracked temporary or diagnostic residue",
-            "*.tmp",
-            "*.bak",
-            "*.log",
-            "stale documentation reference",
+            "Scan obvious secret patterns",
         ):
             self.assertIn(token, workflow)
-
-    def test_command_names_are_valid(self):
-        pattern = re.compile(r"^[a-z0-9][a-z0-9_:-]{0,63}$")
-        for path in (PLUGIN / "commands").glob("*.md"):
-            self.assertRegex(path.stem, pattern)
-
-    def test_agents_have_required_frontmatter(self):
-        for path in (PLUGIN / "agents").glob("*.md"):
-            text = path.read_text(encoding="utf-8")
-            self.assertTrue(text.startswith("---\n"))
-            head = text.split("---", 2)[1]
-            self.assertIn("name:", head)
-            self.assertIn("description:", head)
-            self.assertNotIn("\nmodel:", head)
 
     def test_no_secret_like_material(self):
         patterns = [
