@@ -27,9 +27,28 @@ function isInside(root, candidate) {
   return relative === "" || (!path.isAbsolute(relative) && relative !== ".." && !relative.startsWith(`..${path.sep}`))
 }
 
+function assertNoLinkTraversal(root, resolved) {
+  const relative = path.relative(path.resolve(root), path.resolve(resolved))
+  if (!relative) return
+  let current = path.resolve(root)
+  for (const segment of relative.split(path.sep)) {
+    current = path.join(current, segment)
+    let stat
+    try {
+      stat = fs.lstatSync(current)
+    } catch (error) {
+      if (error && error.code === "ENOENT") break
+      throw error
+    }
+    if (stat.isSymbolicLink()) throw new Error(`governed path crosses a symbolic link or junction: ${current}`)
+  }
+}
+
 function resolveInside(root, value) {
-  const resolved = path.resolve(root, value)
-  if (!isInside(root, resolved)) throw new Error(`path escapes project root: ${value}`)
+  const rootPath = path.resolve(root)
+  const resolved = path.resolve(rootPath, value)
+  if (!isInside(rootPath, resolved)) throw new Error(`path escapes project root: ${value}`)
+  assertNoLinkTraversal(rootPath, resolved)
   return resolved
 }
 
@@ -74,16 +93,19 @@ function runGit(cwd, args, options = {}) {
 }
 
 function activeTaskId(root) {
-  const statusPath = path.join(root, ".ai", "STATUS.md")
+  const statusPath = resolveInside(root, path.join(".ai", "STATUS.md"))
   if (fs.existsSync(statusPath)) {
     const match = fs.readFileSync(statusPath, "utf8").match(/^Current task:\s*(\S+)/mi)
     if (match && match[1].toUpperCase() !== "NONE") return match[1]
   }
-  const tasksDir = path.join(root, ".ai", "tasks")
+  const tasksDir = resolveInside(root, path.join(".ai", "tasks"))
   if (!fs.existsSync(tasksDir)) return null
   const candidates = fs.readdirSync(tasksDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(tasksDir, entry.name, "RUN_STATE.json")))
-    .map((entry) => ({ name: entry.name, mtime: fs.statSync(path.join(tasksDir, entry.name, "RUN_STATE.json")).mtimeMs }))
+    .filter((entry) => entry.isDirectory() && fs.existsSync(resolveInside(tasksDir, path.join(entry.name, "RUN_STATE.json"))))
+    .map((entry) => {
+      const statePath = resolveInside(tasksDir, path.join(entry.name, "RUN_STATE.json"))
+      return { name: entry.name, mtime: fs.statSync(statePath).mtimeMs }
+    })
     .sort((a, b) => b.mtime - a.mtime)
   return candidates[0]?.name || null
 }
@@ -91,6 +113,7 @@ function activeTaskId(root) {
 module.exports = {
   activeTaskId,
   appendJsonLine,
+  assertNoLinkTraversal,
   atomicWriteJson,
   ensureDir,
   existingDirectory,
