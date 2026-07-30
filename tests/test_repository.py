@@ -101,7 +101,7 @@ class RepositoryTests(unittest.TestCase):
             "EVIDENCE_STALE",
             "REVIEW_LENS_MATRIX_V1",
             "CANDIDATE | ACTIVE | SUPERSEDED | REJECTED",
-            "Node.js 22",
+            "Node.js 22.13",
         ):
             self.assertIn(token, text)
 
@@ -124,7 +124,7 @@ class RepositoryTests(unittest.TestCase):
         self.assertIn("${ZCODE_PLUGIN_ROOT}/runtime/mcp-server.js", server["args"])
         package = json.loads(self.read("package.json"))
         self.assertEqual(package.get("dependencies", {}), {})
-        self.assertEqual(package["engines"]["node"], ">=22")
+        self.assertEqual(package["engines"]["node"], ">=22.13.0")
 
     def test_agents_and_commands_require_runtime_authority(self):
         combined = "\n".join([
