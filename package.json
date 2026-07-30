@@ -8,7 +8,7 @@
     "check:runtime": "node --check plugins/ai-engineering-governance/hooks/governance-hook.js && node --check plugins/ai-engineering-governance/runtime/mcp-server.js"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.13.0"
   },
   "dependencies": {}
 }
