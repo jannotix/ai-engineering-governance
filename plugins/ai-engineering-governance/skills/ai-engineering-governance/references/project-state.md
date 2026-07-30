@@ -1,8 +1,8 @@
 # Project State Contract
 
-`/ai-init` creates or validates `.ai/` in the workspace root.
+`/ai-init` creates or validates project-root `.ai/` non-destructively. It stores project-specific state, never reusable plugin policy or plaintext secrets.
 
-Required reusable structure:
+## Canonical structure
 
 ```text
 .ai/
@@ -24,29 +24,35 @@ Required reusable structure:
 ├── SECURITY_BASELINE.md
 ├── QUALITY_GATES.md
 ├── PRODUCTION_READINESS.md
-├── product/                         # conditional for product-affecting work
-│   ├── PRODUCT_VISION.md
-│   ├── USER_AND_ROLE_MODEL.md
-│   ├── DOMAIN_AND_PROCESS_MODEL.md
-│   ├── PRODUCT_COMPLETENESS_MATRIX.md
-│   ├── PRODUCT_BLUEPRINT.md
-│   └── PRODUCT_DECISIONS.md
+├── product/                         # conditional product-affecting state
 ├── decisions/
 ├── milestones/
+├── runtime/
+│   └── pre-commit.json              # deterministic staged receipt pointer
 ├── tasks/
 │   └── <TASK-ID>/
 │       ├── ORIGINAL_USER_REQUEST.md
 │       ├── CLARIFICATION_TRANSCRIPT.md
 │       ├── APPROVED_REQUIREMENTS.md
 │       ├── CONTEXT_MANIFEST.md
+│       ├── CONTEXT_BUDGET.json
+│       ├── CONTEXT_RETRIEVAL.jsonl
+│       ├── CONTEXT_METRICS.jsonl
+│       ├── SKILL_SELECTION.json
 │       ├── TASK_PLAN.md
 │       ├── VERIFICATION_PROFILE.md
 │       ├── RUN_STATE.json
-│       ├── STEERING.md              # optional authoritative mid-task direction
+│       ├── STEERING.md              # optional authoritative direction
+│       ├── approval-receipt.json    # only after Final Reviewer PASS
 │       ├── evidence/
-│       │   └── VERIFICATION_EVIDENCE.md
+│       │   ├── CANDIDATE.json
+│       │   ├── EXECUTION_PACKET.md
+│       │   ├── REVIEW_IMPLEMENTATION_PACKET.md
+│       │   ├── REVIEW_ARCHITECTURE_PACKET.md
+│       │   ├── FINAL_PACKET.md
+│       │   ├── VERIFICATION_EVIDENCE.md
+│       │   └── reuse/
 │       └── reviews/
-├── reviews/
 ├── arbitration/
 ├── migrations/
 ├── followups/
@@ -54,35 +60,32 @@ Required reusable structure:
 └── release/
 ```
 
-The `.ai/` directory stores project state, not reusable governance policy. Do not store credentials or secret values in `.ai/`.
+`PROJECT_HISTORY.md` and `product/PRODUCT_DECISIONS.md` are append-only. Completed historical task evidence is not rewritten by later tasks or plugin upgrades.
 
-`PROJECT_HISTORY.md` and `product/PRODUCT_DECISIONS.md` are append-only where applicable.
+Product state remains lazy. A purely technical patch does not receive empty product artifacts when primary evidence proves no product-scope impact.
 
-`CODEBASE_BASELINE.md` and `CONTEXT_INDEX.md` are reusable routing state. Routine tasks use them plus the current Git delta; they do not require a complete rescan unless evidence makes the baseline stale.
+## Deterministic task artifacts
 
-Each task owns its requirement provenance, context, plan, verification profile, evidence, run state and review artifacts. Historical task evidence is not silently rewritten when later tasks change the project.
+- `CONTEXT_BUDGET.json` is `CONTEXT_BUDGET_V1` derived from `WORK_CLASS`.
+- `CONTEXT_RETRIEVAL.jsonl` records at most three sequential retrieval cycles.
+- `SKILL_SELECTION.json` records admitted/rejected skills and exact reasons.
+- `CANDIDATE.json` stores one `GOVERNANCE_CANDIDATE_V1` projection and digest.
+- `approval-receipt.json` stores one `GOVERNANCE_APPROVAL_RECEIPT_V1` only after required review and Final Reviewer PASS.
+- `.ai/runtime/pre-commit.json` points to a currently valid staged receipt. It is created by the runtime, not edited manually.
+- Evidence reuse records live under `evidence/reuse/` and bind a prior PASS to its exact dependency map.
 
-Product state is created lazily only when the current request is product-affecting. A purely technical patch does not receive empty product boilerplate when primary evidence proves no product-scope impact.
+A stored Git HEAD or `git status` summary is never candidate identity. Continuation/review/commit must rederive the selected projection.
 
-## Product-state rules
+## RUN_STATE.json
 
-Product artifacts record stable product/schema versions, status, source references and last-updated evidence. `PRODUCT_COMPLETENESS_MATRIX.md` tracks stable capability IDs and `REQUIRED | OPTIONAL | NOT_APPLICABLE | DEFERRED` classification.
-
-A validated task or milestone may leave:
-
-```text
-PRODUCT_INCOMPLETE
-```
-
-Task validation proves the scoped increment; it does not imply the complete approved product exists.
-
-## RUN_STATE.json minimum fields
+Minimum schema:
 
 ```json
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "task_id": "TASK-ID",
   "state": "TASK_PLANNING",
+  "terminal": false,
   "baseline_reference": "<git/ref-or-NONE>",
   "repository_head": "<git-head-or-NONE>",
   "work_class": "PATCH",
@@ -97,56 +100,99 @@ Task validation proves the scoped increment; it does not imply the complete appr
   "affected_capability_ids": [],
   "user_approval_required": false,
   "user_approval_status": "NOT_REQUIRED",
+  "context_state": "NOT_STARTED",
+  "context_cycle": 0,
+  "candidate_projection": null,
+  "candidate_digest": null,
+  "receipt_path": null,
+  "receipt_digest": null,
   "review_depth": "STANDARD",
   "review_cycle": 0,
   "review_frozen": false,
   "execution_complete": false,
-  "review_complete": false,
+  "implementation_review_complete": false,
+  "architecture_review_complete": false,
+  "final_adjudication_complete": false,
   "last_safe_transition": "TASK_PLANNING",
   "resumable": true,
   "human_input_required": false,
   "blocker": null,
+  "next_action": {
+    "kind": "execute",
+    "command": "/ai-architect",
+    "arguments": ["TASK-ID"],
+    "expected_postcondition": "READY_FOR_EXECUTION"
+  },
   "updated_at": "<timestamp>"
 }
 ```
 
-A stored `repository_head` is not enough for a dirty worktree. Continuation/review must also reconcile Git status/diff and the target recorded by task evidence.
+Every non-terminal state must pass `ACTIONABLE_CONTINUATION_V1`. An alternative human-decision action is:
 
-Existing schema-version-1 task state is upgraded lazily from authoritative evidence. Preserve history, do not fabricate product facts or approvals, and leave unsupported fields unknown or not required as appropriate.
+```json
+{
+  "kind": "human_decision",
+  "decision_required": "Select the authorized migration strategy",
+  "available_choices": ["forward-only", "reversible", "cancel"]
+}
+```
+
+Narrative `continue`, `retry` or `finish` is invalid. Terminal states have `terminal: true` and `next_action: null`.
+
+Schema-version-1/2 tasks adopt new fields lazily from current authoritative evidence. Never fabricate historical candidate, receipt, safepoint, review, evidence reuse or approval.
+
+## Context states
+
+```text
+NOT_STARTED
+DISPATCH
+EVALUATE
+REFINE
+CONTEXT_SUFFICIENT
+BLOCKED_CONTEXT_GAP
+```
+
+Cycle three must end in `CONTEXT_SUFFICIENT` or `BLOCKED_CONTEXT_GAP`.
 
 ## Review modes
 
-- `STANDARD` — independent implementation review.
-- `ELEVATED` — independent implementation plus architecture/security review followed by Final Reviewer adjudication.
-- `DISCOVERY_REVIEW` — isolated product/discovery reviews followed by Final Reviewer `DISCOVERY_PASS | DISCOVERY_DEFECT | DISCOVERY_BLOCKED`.
+- `STANDARD` — independent Implementation Reviewer.
+- `ELEVATED` — independent Implementation and Architecture/Security reports followed by Final Reviewer.
+- `DISCOVERY_REVIEW` — isolated discovery reports followed by Final Reviewer discovery adjudication.
+
+All reviews reference one frozen candidate digest. Sibling reports are isolated until both complete.
 
 ## STATUS.md states
 
-- INTAKE
-- BASELINING
-- PLANNING
-- PRODUCT_DISCOVERY
-- DISCOVERY_REVIEW
-- PRODUCT_SCOPE_APPROVAL
-- TASK_PLANNING
-- READY_FOR_EXECUTION
-- IMPLEMENTING
-- BLOCKED_ARCHITECTURE
-- BLOCKED_EXTERNAL
-- ARBITRATION_REQUIRED
-- ARBITRATION_IN_PROGRESS
-- TASK_VERIFYING
-- READY_FOR_REVIEW
-- VERIFYING
-- TASK_VALIDATED
-- MILESTONE_VALIDATED
-- PRODUCT_INCOMPLETE
-- PRODUCT_COMPLETE
-- LOCAL_COMMITTED
-- FIX_REQUIRED
-- RELEASE_CANDIDATE
-- ADVERSARIAL_REVIEW
-- NOT_READY_FOR_PRODUCTION
-- READY_FOR_PRODUCTION
+```text
+INTAKE
+BASELINING
+PLANNING
+PRODUCT_DISCOVERY
+DISCOVERY_REVIEW
+PRODUCT_SCOPE_APPROVAL
+TASK_PLANNING
+READY_FOR_EXECUTION
+IMPLEMENTING
+BLOCKED_CONTEXT_GAP
+BLOCKED_RUNTIME
+BLOCKED_ARCHITECTURE
+BLOCKED_EXTERNAL
+ARBITRATION_REQUIRED
+ARBITRATION_IN_PROGRESS
+TASK_VERIFYING
+READY_FOR_REVIEW
+VERIFYING
+TASK_VALIDATED
+MILESTONE_VALIDATED
+PRODUCT_INCOMPLETE
+PRODUCT_COMPLETE
+LOCAL_COMMITTED
+FIX_REQUIRED
+RELEASE_CANDIDATE
+ADVERSARIAL_REVIEW
+NOT_READY_FOR_PRODUCTION
+READY_FOR_PRODUCTION
+```
 
-`TASK_VALIDATED` means implementation evidence and the review depth required by `VERIFICATION_PROFILE.md` have passed. `PRODUCT_COMPLETE` is a separate product-completeness verdict. Local commit follows validation; push never follows automatically.
+`TASK_VALIDATED` means required evidence and review passed for the frozen candidate. It does not authorize commit until a current staged approval receipt verifies. `PRODUCT_COMPLETE` remains separate from `READY_FOR_PRODUCTION`. No state authorizes push, PR creation/merge, publication, deployment or rollback.
