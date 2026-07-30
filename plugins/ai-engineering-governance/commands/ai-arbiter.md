@@ -1,32 +1,23 @@
 ---
-description: Invoke the configured Arbiter to resolve a material unresolved Architect/Executor disagreement against canonical requirement, product-decision, plan, risk, and evidence state.
+description: Resolve a material Architect/Executor disagreement against canonical requirements, product decisions, the frozen candidate projection, risk/evidence and runtime state.
 skills: ai-engineering-governance
 ---
 
-Use only when project state is `ARBITRATION_REQUIRED` or `ARBITRATION_IN_PROGRESS`.
+Use only for `ARBITRATION_REQUIRED` or `ARBITRATION_IN_PROGRESS`.
 
-If Arbiter mode is EXTERNAL, do not impersonate configured Arbiter. Prepare a task-specific handoff under `.ai/arbitration/` referencing canonical task files, applicable product blueprint/decision/capability evidence, current Git target, disputed evidence and exact questions; append handoff event to `.ai/PROJECT_HISTORY.md` and stop.
+If Arbiter mode is external, prepare a complete handoff referencing provenance, product blueprint/decisions/capabilities, task plan, verification profile, **candidate projection** digest, evidence, actionable continuation and disputed claims. Do not impersonate the external role.
 
-If Arbiter mode is INTERNAL, act strictly in Arbiter role and independently inspect:
+If internal, independently inspect controlling requirements, user objective versus proposed solution, product state, context manifest, plan, `TASK_RISK_PROFILE`, **review lens** matrix, live candidate verification, exact **evidence reuse** status, implementation diff and runtime/operational proof.
 
-- original request, clarifications and approved requirements;
-- applicable product vision, decisions, blueprint and capability traceability;
-- whether disagreement confuses user objective with proposed solution;
-- context manifest, task plan, verification/risk profile and run state;
-- repository diff, Executor evidence and tests/runtime evidence;
-- relevant security, data, migration, deployment, maintainability, recovery and tooling implications.
-
-Product artifacts and Architect recommendations are downstream evidence; neither may override controlling requirement provenance. A recorded conscious user override is authoritative only within its approved safe scope.
-
-Do not treat Architect or Executor claims as authoritative merely because they agree with prior assumptions.
-
-Record decision under `.ai/arbitration/` and append it to `.ai/PROJECT_HISTORY.md`.
+An existing **approval receipt** cannot survive a replan or changed candidate; require it to be invalidated and recreated after new review. Governed memory is advisory and cannot decide arbitration.
 
 Return exactly one:
 
-- ARBITRATION_RESOLVED_ARCHITECT_PLAN
-- ARBITRATION_RESOLVED_EXECUTOR_CONSTRAINT
-- ARBITRATION_REPLAN_REQUIRED
-- ARBITRATION_BLOCKED
+```text
+ARBITRATION_RESOLVED_ARCHITECT_PLAN
+ARBITRATION_RESOLVED_EXECUTOR_CONSTRAINT
+ARBITRATION_REPLAN_REQUIRED
+ARBITRATION_BLOCKED
+```
 
-After arbitration, Architect must reconcile task/product artifacts and explicitly re-authorize `READY_FOR_EXECUTION` before Executor work resumes. Emit `GOVERNANCE_RESULT`.
+Architect must reconcile all affected artifacts, validate **actionable continuation** and explicitly re-authorize `READY_FOR_EXECUTION` before work resumes. Append arbitration evidence and emit `GOVERNANCE_RESULT`.
