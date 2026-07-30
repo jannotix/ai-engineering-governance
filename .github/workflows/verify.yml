@@ -9,7 +9,11 @@ permissions:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -26,7 +30,9 @@ jobs:
           node-version: "24"
 
       - name: Validate JSON manifests
+        shell: bash
         run: |
+          set -euo pipefail
           python -m json.tool marketplace.json >/dev/null
           python -m json.tool plugins/ai-engineering-governance/.zcode-plugin/plugin.json >/dev/null
           python -m json.tool plugins/ai-engineering-governance/.mcp.json >/dev/null
@@ -59,7 +65,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: verification-output
+          name: verification-output-${{ matrix.os }}
           path: |
             unittest-output.txt
             runtime-test-output.txt
