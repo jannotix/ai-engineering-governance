@@ -1,13 +1,15 @@
 {
   "name": "ai-engineering-governance",
-  "version": "1.2.0",
-  "description": "Model-agnostic product-lifecycle and software-engineering governance for adaptive discovery, constructive challenge, product completeness, evidence-driven verification, operational assurance, independent review, arbitration, and production release.",
+  "version": "2.0.0",
+  "description": "Model-agnostic deterministic product-lifecycle and software-engineering governance with candidate receipts, context intelligence, exact evidence reuse, governed memory, independent review and production release gates.",
   "author": {"name": "Gianluca Iannotta", "url": "https://github.com/jannotix"},
   "homepage": "https://github.com/jannotix/ai-engineering-governance",
   "repository": "https://github.com/jannotix/ai-engineering-governance",
   "license": "FSL-1.1-MIT",
-  "keywords": ["software-engineering", "product-discovery", "product-governance", "governance", "sdd", "ddd", "testing", "architecture", "verification", "maintainability", "code-review", "release", "multi-agent", "arbitration"],
+  "keywords": ["software-engineering", "product-governance", "deterministic-runtime", "candidate-authority", "approval-receipt", "context-intelligence", "evidence", "memory", "mcp", "hooks", "review", "release"],
   "commands": "commands",
   "skills": "skills",
-  "agents": "agents"
+  "agents": "agents",
+  "hooks": "hooks/hooks.json",
+  "mcpServers": ".mcp.json"
 }
