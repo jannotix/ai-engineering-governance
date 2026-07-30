@@ -39,6 +39,10 @@ function toolPayload() {
   return {}
 }
 
+function payloadText() {
+  try { return JSON.stringify(toolPayload()) } catch { return "" }
+}
+
 function root() {
   return projectRoot(hookInput.cwd)
 }
@@ -46,7 +50,7 @@ function root() {
 function activeRunState(projectDir) {
   const taskId = activeTaskId(projectDir)
   if (!taskId) return { taskId: null, state: null, path: null }
-  const statePath = path.join(projectDir, ".ai", "tasks", taskId, "RUN_STATE.json")
+  const statePath = resolveInside(projectDir, path.join(".ai", "tasks", taskId, "RUN_STATE.json"))
   if (!fs.existsSync(statePath)) return { taskId, state: null, path: statePath }
   return { taskId, state: readJson(statePath), path: statePath }
 }
@@ -66,17 +70,17 @@ function commandText() {
 }
 
 function isGitCommit(command) {
-  return /(^|[;&|]\s*)git\s+(?:-[^\s]+\s+)*commit(?:\s|$)/i.test(command)
+  return /(?:^|[\s;&|])git\s+(?:-[^\s]+\s+)*commit(?:\s|$)/i.test(command)
 }
 
 function isExternalAction(command) {
   const patterns = [
-    /(^|[;&|]\s*)git\s+push(?:\s|$)/i,
-    /(^|[;&|]\s*)gh\s+pr\s+(?:create|merge)(?:\s|$)/i,
-    /(^|[;&|]\s*)npm\s+publish(?:\s|$)/i,
-    /(^|[;&|]\s*)docker\s+push(?:\s|$)/i,
-    /(^|[;&|]\s*)kubectl\s+(?:apply|delete|rollout)(?:\s|$)/i,
-    /(^|[;&|]\s*)terraform\s+apply(?:\s|$)/i,
+    /(?:^|[\s;&|])git\s+(?:-[^\s]+\s+)*push(?:\s|$)/i,
+    /(?:^|[\s;&|])gh\s+pr\s+(?:create|merge)(?:\s|$)/i,
+    /(?:^|[\s;&|])npm\s+publish(?:\s|$)/i,
+    /(?:^|[\s;&|])docker\s+push(?:\s|$)/i,
+    /(?:^|[\s;&|])kubectl\s+(?:apply|delete|rollout)(?:\s|$)/i,
+    /(?:^|[\s;&|])terraform\s+apply(?:\s|$)/i,
   ]
   return patterns.some((pattern) => pattern.test(command))
 }
@@ -86,13 +90,21 @@ function protectedRuntimePath(projectDir, candidate) {
   return rel === ".ai/runtime/pre-commit.json" || /(^|\/)approval-receipt\.json$/i.test(rel)
 }
 
+function payloadReferencesProtectedRuntime() {
+  return /approval-receipt\.json|\.ai[\\/]runtime[\\/]pre-commit\.json/i.test(payloadText())
+}
+
+function nodeRuntimeSupported() {
+  const [major, minor] = process.versions.node.split(".").map(Number)
+  return major > 22 || (major === 22 && minor >= 5)
+}
+
 function sessionStart() {
   const projectDir = root()
   const notes = [
-    "[AI Engineering Governance 2.0.0] Deterministic runtime is active. Candidate receipts, context budgets, exact evidence reuse and governed memory are advisory or blocking according to the persisted task state.",
+    "[AI Engineering Governance 2.0.0] Deterministic runtime is active. Candidate receipts, context budgets, exact evidence reuse and governed memory are advisory or blocking according to persisted task state.",
   ]
-  const major = Number(process.versions.node.split(".")[0])
-  if (major < 22) notes.push("BLOCKED_RUNTIME: Node.js 22+ is required for the zero-dependency MCP runtime and SQLite governed memory.")
+  if (!nodeRuntimeSupported()) notes.push("BLOCKED_RUNTIME: Node.js 22.5+ is required for the zero-dependency MCP runtime and SQLite governed memory.")
   const active = activeRunState(projectDir)
   if (active.state) {
     try {
@@ -127,14 +139,23 @@ function preToolUse() {
   }
 
   if (/write|edit|applypatch/i.test(name)) {
+    if (payloadReferencesProtectedRuntime()) {
+      deny("Direct writes to approval receipts or the pre-commit pointer are blocked. Use the deterministic governance MCP tools.")
+      return
+    }
     const active = activeRunState(projectDir)
+    const frozen = active.state?.review_frozen === true && ["READY_FOR_REVIEW", "VERIFYING", "TASK_VALIDATED"].includes(active.state.state)
+    if (frozen && /applypatch/i.test(name)) {
+      deny(`Reviewed target is frozen in state ${active.state.state}. ApplyPatch is denied until Architect replanning creates a new candidate.`)
+      return
+    }
     for (const target of targetPaths(projectDir)) {
       if (protectedRuntimePath(projectDir, target)) {
         deny(`Direct writes to ${relativePath(projectDir, target)} are blocked. Use the deterministic governance MCP tools.`)
         return
       }
-      if (active.state?.review_frozen === true && ["READY_FOR_REVIEW", "VERIFYING", "TASK_VALIDATED"].includes(active.state.state)) {
-        const aiRoot = path.join(projectDir, ".ai")
+      if (frozen) {
+        const aiRoot = resolveInside(projectDir, ".ai")
         if (!isInside(aiRoot, target)) {
           deny(`Reviewed target is frozen in state ${active.state.state}. Return to Architect/replanning before modifying source or project documentation.`)
           return
@@ -163,9 +184,8 @@ function main() {
     else if (event === "post-tool-use") postToolUse()
     else throw new Error(`unknown governance hook event: ${event}`)
   } catch (error) {
-    const command = commandText()
-    if (event === "pre-tool-use" && (isGitCommit(command) || isExternalAction(command))) {
-      deny(`Governance hook failed closed for a sensitive action: ${error instanceof Error ? error.message : String(error)}`)
+    if (event === "pre-tool-use" && /bash|write|edit|applypatch/i.test(toolName())) {
+      deny(`Governance hook failed closed for a mutating action: ${error instanceof Error ? error.message : String(error)}`)
     } else {
       process.stderr.write(`[ai-engineering-governance hook] ${error instanceof Error ? error.message : String(error)}\n`)
     }
@@ -174,4 +194,4 @@ function main() {
 
 if (require.main === module) main()
 
-module.exports = { isExternalAction, isGitCommit, targetPaths }
+module.exports = { isExternalAction, isGitCommit, nodeRuntimeSupported, payloadReferencesProtectedRuntime, targetPaths }
