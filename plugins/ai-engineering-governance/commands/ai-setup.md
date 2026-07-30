@@ -20,10 +20,11 @@ Write only non-secret configuration. Record fixed policies:
 - context budget and skill selection before implementation;
 - exact **evidence reuse** and risk-derived **review lens** matrix;
 - governed memory is advisory and Final-Reviewer-controlled;
+- governed paths reject symlink/junction traversal;
 - one scoped local commit only after review PASS and valid staged receipt;
 - automatic push, PR creation/merge, publication and deployment are blocked;
 - plaintext secrets are denied in Git by default.
 
-Verify Node.js 22+, plugin hook registration and MCP availability. Record `BLOCKED_RUNTIME` when unavailable; do not weaken the contract.
+Verify Node.js 22.13.0+, unflagged `node:sqlite`, plugin hook registration and MCP availability. Record `BLOCKED_RUNTIME` when unavailable; do not weaken the contract.
 
 Do not change provider credentials or invent model IDs. Append configuration changes to project history without secret values and emit `GOVERNANCE_RESULT`.
