@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "ai-engineering-governance": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${ZCODE_PLUGIN_ROOT}/runtime/mcp-server.js"
+      ],
+      "env": {
+        "ZCODE_PLUGIN_DATA": "${ZCODE_PLUGIN_DATA}"
+      }
+    }
+  }
+}
