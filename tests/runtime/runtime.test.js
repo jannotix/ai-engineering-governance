@@ -53,7 +53,7 @@ test("governed paths reject symbolic-link or junction traversal", (t) => {
     t.skip(`link creation unavailable: ${error.code || error.message}`)
     return
   }
-  assert.throws(() => resolveInside(root, ".ai/tasks/TASK-1/RUN_STATE.json"), /symbolic link|junction/i)
+  assert.throws(() => resolveInside(root, ".ai/tasks/TASK-1/RUN_STATE.json"), /symbolic link|junction|path escapes project root/i)
 })
 
 test("workspace candidate excludes root .git and .ai and detects content changes", () => {
