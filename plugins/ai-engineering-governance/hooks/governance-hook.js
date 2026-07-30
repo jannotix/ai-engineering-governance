@@ -95,8 +95,12 @@ function payloadReferencesProtectedRuntime() {
 }
 
 function nodeRuntimeSupported() {
-  const [major, minor] = process.versions.node.split(".").map(Number)
-  return major > 22 || (major === 22 && minor >= 5)
+  try {
+    require("node:sqlite")
+    return true
+  } catch {
+    return false
+  }
 }
 
 function sessionStart() {
@@ -104,7 +108,7 @@ function sessionStart() {
   const notes = [
     "[AI Engineering Governance 2.0.0] Deterministic runtime is active. Candidate receipts, context budgets, exact evidence reuse and governed memory are advisory or blocking according to persisted task state.",
   ]
-  if (!nodeRuntimeSupported()) notes.push("BLOCKED_RUNTIME: Node.js 22.5+ is required for the zero-dependency MCP runtime and SQLite governed memory.")
+  if (!nodeRuntimeSupported()) notes.push("BLOCKED_RUNTIME: Node.js 22.13.0+ is required for unflagged node:sqlite governed memory.")
   const active = activeRunState(projectDir)
   if (active.state) {
     try {
