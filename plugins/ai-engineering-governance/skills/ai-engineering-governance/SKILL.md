@@ -1,18 +1,19 @@
 ---
 name: ai-engineering-governance
-description: Use when discovering, planning, implementing, reviewing, migrating, testing, packaging, or releasing software that should remain product-correct, verifiable, minimally designed, locally testable, auditable, maintainable, evidence-driven, and production-gated.
+description: Use for product discovery, planning, implementation, review, migration, testing, packaging, or release work requiring deterministic candidate authority, evidence, independent review and production gates.
 license: FSL-1.1-MIT
 metadata:
   author: Gianluca Iannotta
-  version: 1.2.0
+  version: 2.0.0
 ---
 
 # AI Engineering Governance
 
-Use explicit role boundaries, adaptive product discovery, task-local provenance/evidence, executable verification, and conservative Git behavior.
+Combine explicit role boundaries, adaptive product discovery, canonical task provenance, deterministic runtime authority, executable verification and conservative Git behavior.
 
 Detailed contracts:
 
+- `references/deterministic-runtime.md`
 - `references/product-lifecycle.md`
 - `references/requirement-provenance.md`
 - `references/context-routing.md`
@@ -23,18 +24,18 @@ Detailed contracts:
 
 ## Authority
 
-- **Architect:** owns baseline/context routing, adaptive product discovery, requirement normalization, constructive challenge, product definition, architecture, task plans, risk/evidence planning, dependencies, migrations, test strategy, deployment scope, and technical decisions.
-- **Executor:** is the only normal production-source writer; implements Architect-approved work and records execution evidence.
-- **Reviewer:** independently challenges discovery and implementation/runtime/regression evidence for every completed governed task and release surface in scope.
-- **Architecture/Security Reviewer:** independently challenges product, architecture, security, data, dependency, deployment and recovery evidence when discovery review or review depth is elevated.
-- **Final Reviewer:** adjudicates required discovery review, ELEVATED task/milestone review, product completeness and release review after independent advisory reviews complete.
-- **Arbiter:** resolves material Architect/Executor disagreement before validation when normal replanning cannot safely settle it.
+- **Architect:** owns baseline, adaptive discovery, CONSTRUCTIVE_CHALLENGE, product definition, context routing, task planning, risk/evidence planning and execution authorization.
+- **Executor:** is the only normal production-source writer and implements only an authorized packet.
+- **Reviewer:** independently challenges discovery, implementation, regression, runtime and maintainability evidence.
+- **Architecture/Security Reviewer:** independently challenges architecture, security, data, dependency, deployment and recovery evidence when required.
+- **Final Reviewer:** adjudicates required discovery, ELEVATED task/milestone review, product completeness, governed memory and release readiness.
+- **Arbiter:** resolves material Architect/Executor disagreement before validation when normal replanning is insufficient.
 
-Do not silently cross role boundaries.
+No role may silently cross another role's authority. Runtime tools compute identity and state; they do not make product decisions or authorize wider scope.
 
-## Initial adversarial baseline
+## Baseline and product lifecycle
 
-Before first implementation, Architect performs adversarial reverse engineering of the complete authored codebase and creates or refreshes:
+Before first implementation, Architect creates or refreshes:
 
 ```text
 .ai/CODEBASE_BASELINE.md
@@ -42,27 +43,19 @@ Before first implementation, Architect performs adversarial reverse engineering 
 .ai/DEPLOYMENT_SCOPE.md
 ```
 
-Account for source/configuration, architecture/modules, entry points, data flows, trust boundaries, dependencies, persistence/migrations, external integrations, tests, deployment, maintainability, plaintext secrets/tracked sensitive files, known defects, product-affecting surfaces and material risks.
+Account for authored source/configuration, entry points, call/dependency edges, data/trust boundaries, persistence/migrations, integrations, tests, deployment, maintainability, plaintext secrets and material risks. New, stale or explicitly re-audited baselines require independent ELEVATED review.
 
-Generated/vendor/cache trees may be classified rather than exhaustively read, but authored behavior-affecting source/configuration must be accounted for.
+Every request receives:
 
-Refresh the full baseline only when repository/architecture/framework/dependency/import/merge/deployment changes make it materially stale. Routine tasks use the validated baseline/context index plus current Git delta and targeted discovery.
+```text
+WORK_CLASS: PATCH | BOUNDED_FEATURE | MAJOR_FEATURE | EXISTING_PRODUCT_EVOLUTION | NEW_PRODUCT | HIGH_RISK_CHANGE
+DISCOVERY_DEPTH: LIGHT | STANDARD | DEEP
+ASSISTANCE_MODE: GUIDED | STANDARD | EXPERT
+```
 
-For a new, materially stale or explicitly re-audited baseline, use independent ELEVATED baseline review. Final Reviewer controls `BASELINE_PASS | BASELINE_DEFECT | BLOCKED`. Implementation remains blocked until the baseline is validated.
+Discovery is never `NONE`. Do not repeat answered questions. Track unresolved material decisions in `MATERIAL_UNKNOWN_COUNT`.
 
-## Adaptive product discovery
-
-Every governed request receives exactly one `WORK_CLASS`, one `DISCOVERY_DEPTH: LIGHT | STANDARD | DEEP`, and one `ASSISTANCE_MODE: GUIDED | STANDARD | EXPERT`.
-
-Discovery is always present. A small patch may use concise `LIGHT` discovery against established evidence. New products, high-risk change, materially vague/product-wide work and decisions that could invalidate architecture or delivery use `DEEP` discovery.
-
-Discovery covers applicable objectives, users/roles, workflows/exceptions, data/rules, UX/accessibility/states, security/privacy/audit, administration/reporting/communications, integrations/constraints, installation/operation/recovery/support, and completeness/delivery.
-
-Do not repeat questions answered by authoritative evidence or prior user decisions. Track only unresolved material decisions in `MATERIAL_UNKNOWN_COUNT`.
-
-### Constructive challenge
-
-Do not agree with a proposed solution merely because the user requested it. Separate:
+`CONSTRUCTIVE_CHALLENGE` separates:
 
 ```text
 USER_OBJECTIVE
@@ -71,50 +64,39 @@ GOVERNANCE_RECOMMENDATION
 FINAL_USER_DECISION
 ```
 
-Explain material alternatives and consequences across security, data safety, correctness, complexity, maintenance, compatibility, cost, reversibility, accessibility and operational burden.
+Only conventional, low-risk, reversible, scope-neutral technical defaults may proceed without explicit approval. Material product, architecture, data, privacy, security, retention, commercial, licensing and operational decisions require authoritative approval. Never fabricate approval.
 
-A conscious non-blocking override is `USER_OVERRIDE_ACCEPTED`. Block foreseeable critical insecurity, unacceptable data loss, applicable legal violation, impossible approved requirements or false validation/completeness claims.
-
-### Guided decisions
-
-Only a conventional, low-risk, reversible, scope-neutral `REVERSIBLE_TECHNICAL_DEFAULT` may proceed without explicit approval. Material product, architecture, data, privacy, security, retention, commercial, licensing and operational decisions require user or authoritative owner approval.
-
-Never fabricate approval. Preserve material decisions, overrides, blockers, exclusions, deferrals and supersession chronologically in product decisions and project history.
-
-### Conditional product state
-
-Create `.ai/product/` only for product-affecting work:
+Product-affecting work may create:
 
 ```text
-PRODUCT_VISION.md
-USER_AND_ROLE_MODEL.md
-DOMAIN_AND_PROCESS_MODEL.md
-PRODUCT_COMPLETENESS_MATRIX.md
-PRODUCT_BLUEPRINT.md
-PRODUCT_DECISIONS.md
+.ai/product/PRODUCT_VISION.md
+.ai/product/USER_AND_ROLE_MODEL.md
+.ai/product/DOMAIN_AND_PROCESS_MODEL.md
+.ai/product/PRODUCT_COMPLETENESS_MATRIX.md
+.ai/product/PRODUCT_BLUEPRINT.md
+.ai/product/PRODUCT_DECISIONS.md
 ```
 
-Do not create empty product boilerplate for a purely technical patch whose lack of product-scope effect is established by primary evidence.
-
-Product artifacts remain downstream from canonical request and clarification provenance. They cannot rewrite historical task requirements.
-
-### Discovery review
-
-Use `DISCOVERY_REVIEW` for `NEW_PRODUCT`, `HIGH_RISK_CHANGE`, `DEEP`, materially vague/product-wide work, or discovery decisions with material security/data/architecture/legal/operational impact.
-
-The independent Reviewer and Architecture/Security Reviewer inspect the same frozen discovery target without sibling findings. Final Reviewer returns exactly:
+Do not create product boilerplate for a proven purely technical patch. Capability states remain:
 
 ```text
-DISCOVERY_PASS
-DISCOVERY_DEFECT
-DISCOVERY_BLOCKED
+REQUIRED | OPTIONAL | NOT_APPLICABLE | DEFERRED
 ```
 
-Required discovery cannot unlock planning until `DISCOVERY_PASS`, `MATERIAL_UNKNOWN_COUNT: 0`, and all required product-scope/user approvals are present.
+A deferred required capability keeps the product incomplete unless approved complete scope changes explicitly. Product delivery uses coherent `VERTICAL_MILESTONE` increments.
 
-## Requirement provenance
+Product and release verdicts remain separate:
 
-Every task stores under `.ai/tasks/<TASK-ID>/`:
+```text
+PRODUCT_COMPLETE | PRODUCT_DEFECT | PRODUCT_BLOCKED
+READY_FOR_PRODUCTION | NOT_READY_FOR_PRODUCTION
+```
+
+A validated task or milestone does not prove a complete product or production-ready release.
+
+## Requirement provenance and steering
+
+Every task stores:
 
 ```text
 ORIGINAL_USER_REQUEST.md
@@ -122,62 +104,25 @@ CLARIFICATION_TRANSCRIPT.md
 APPROVED_REQUIREMENTS.md
 ```
 
-The task plan and product artifacts are downstream from these files and cannot override them.
+Plans, product artifacts, summaries, skills, memory and model assertions are downstream. Block `READY_FOR_EXECUTION` while controlling requirements are ambiguous, conflicting, omitted, weakened or unauthorizedly broadened.
 
-Block `READY_FOR_EXECUTION` while controlling requirements are materially ambiguous, conflicting, omitted, weakened or unauthorizedly broadened. Secret values are redacted before persistence without changing semantic intent.
+Material mid-task direction first enters `STEERING.md`, then `CLARIFICATION_TRANSCRIPT.md`, then `APPROVED_REQUIREMENTS.md` when authorized, and triggers replanning when it invalidates the plan or evidence. Executor never applies material steering directly from transient chat.
 
-Material mid-task direction is first recorded in `.ai/tasks/<TASK-ID>/STEERING.md`, then appended to `CLARIFICATION_TRANSCRIPT.md`, reflected in `APPROVED_REQUIREMENTS.md` when authorized, and triggers replanning when it invalidates current scope, plan, product state or evidence. Executor never applies material steering directly from transient chat.
+## Context and planning
 
-## Context efficiency
+Routine tasks use validated baseline/indexes, current Git delta, product evidence and targeted primary evidence. Every task maintains `CONTEXT_MANIFEST.md` and a `MINIMUM_CHANGE_ASSESSMENT` covering root cause, existing/native capabilities, installed dependencies, any new dependency/abstraction and why the change is the smallest correct, secure and maintainable solution.
 
-Every task creates `CONTEXT_MANIFEST.md` from:
-
-- validated baseline/context index;
-- current Git head/status/diff;
-- task requirement provenance;
-- applicable approved product blueprint and capability evidence;
-- targeted primary repository evidence;
-- bounded read-only ZCode exploration for materially multi-surface tasks when useful.
-
-Discovery summaries are hypotheses until verified against primary evidence. Do not repeatedly scan the entire repository merely because a new task starts.
-
-Every implementation-ready plan includes `MINIMUM_CHANGE_ASSESSMENT`: existing/native/stdlib and installed capabilities first, justification for new dependency/abstraction, and why the diff is the smallest correct secure maintainable solution.
-
-## Product completeness and vertical delivery
-
-`PRODUCT_COMPLETENESS_MATRIX.md` classifies stable capability IDs as:
+For deterministic retrieval use:
 
 ```text
-REQUIRED | OPTIONAL | NOT_APPLICABLE | DEFERRED
+CONTEXT_BUDGET_V1
+DISPATCH → EVALUATE → REFINE
+CONTEXT_SUFFICIENT | BLOCKED_CONTEXT_GAP
 ```
 
-A deferred required capability remains visible and keeps the product incomplete unless approved complete scope changes explicitly.
+Maximum three retrieval cycles. `SKILL_CAPABILITY_MANIFEST_V1` selection checks trust, work class, technologies, required tools, conflicts, overlap and token budget. A skill never authorizes a write, dependency, requirement change, security weakening or external action.
 
-Product delivery uses coherent `VERTICAL_MILESTONE` increments. Product-affecting tasks record product blueprint version, affected capability IDs, requirement/acceptance traceability and expected completeness impact.
-
-`MILESTONE_VALIDATED` proves the increment, not the complete product.
-
-Product completeness and release readiness are separate:
-
-```text
-PRODUCT_COMPLETENESS_VERDICT:
-PRODUCT_COMPLETE | PRODUCT_DEFECT | PRODUCT_BLOCKED
-
-RELEASE_VERDICT:
-READY_FOR_PRODUCTION | NOT_READY_FOR_PRODUCTION
-```
-
-A technically valid milestone may leave `PRODUCT_INCOMPLETE`. Production readiness requires `PRODUCT_COMPLETE` for approved complete scope plus fresh release evidence. Neither verdict authorizes deploy, publish, merge, rollback or push.
-
-## Task planning gate
-
-Large work is decomposed:
-
-```text
-Project → Vertical Milestone → Task → Slice
-```
-
-Before each Executor handoff, Architect must create or update task-local:
+Before Executor handoff, Architect creates or updates:
 
 ```text
 APPROVED_REQUIREMENTS.md
@@ -187,62 +132,67 @@ VERIFICATION_PROFILE.md
 RUN_STATE.json
 ```
 
-`TASK_PLAN.md` defines exact scope/out-of-scope, slices, acceptance criteria, capability traceability, product-completeness impact, regression surface, migration/security/secret/deployment/maintainability/documentation impact, external validation and minimum-change assessment.
+`TASK_PLAN.md` defines exact scope/out-of-scope, slices, acceptance criteria, capability traceability, product-completeness impact, regressions, migration/security/deployment/maintainability/documentation impact and external validation.
 
-`VERIFICATION_PROFILE.md` defines `TASK_RISK_PROFILE`, authoritative validation commands/capabilities, gate applicability, evidence freshness dependencies and review depth.
+## Deterministic runtime authority
 
-Only then may the task become `READY_FOR_EXECUTION`.
+Use `GOVERNANCE_CANDIDATE_V1` with one exact candidate projection:
 
-## Evidence-Driven Verification
+```text
+workspace | staged | commit | base-diff
+```
 
-Task risk dimensions are `NONE | LOW | HIGH` for security, migration, public contract, dependency, deployment, performance, generated artifacts, destructive actions, input validation, test reliability, human ownership, user flow, visual behavior, external tooling, recovery and experimentation.
+After required review and Final Reviewer adjudication, create `GOVERNANCE_APPROVAL_RECEIPT_V1` binding candidate identity, approved requirements, execution packet, verification profile, evidence and both independent reviews. Any changed candidate or artifact returns `APPROVAL_RECEIPT_MISMATCH`; approval never renews automatically.
 
-Gate planning states:
+Every non-terminal `RUN_STATE.json` uses `ACTIONABLE_CONTINUATION_V1` with either:
+
+- an executable existing `/ai-*` command, exact arguments and expected postcondition; or
+- a concrete human decision with available choices.
+
+Narrative `continue`, `retry` or `finish` is not executable authority. `/ai-start` follows persisted state rather than conversation memory.
+
+A staged approval receipt may arm the project pre-commit pointer. The ZCode PreToolUse hook rederives the staged candidate before `git commit` without a model call. Direct receipt mutation is blocked.
+
+## Verification and evidence reuse
+
+`VERIFICATION_PROFILE.md` defines `TASK_RISK_PROFILE`, repository-native validation, gate applicability, evidence dependencies and review depth.
+
+Risk uses `NONE | LOW | HIGH`. Gate planning uses:
 
 ```text
 REQUIRED | CONDITIONAL | NOT_APPLICABLE
 ```
 
-Evidence states:
+Executed evidence uses:
 
 ```text
 PASS | FAIL | UNAVAILABLE | STALE | BLOCKED
 ```
 
-`UNAVAILABLE` or `STALE` is never silently treated as `PASS`.
+`UNAVAILABLE` or `STALE` never becomes `PASS` by assertion. Use repository-native verification first. Do not install a dependency, verifier or service merely to make governance green.
 
-Use repository-native verification first. Do not invent commands, thresholds or dependencies merely to satisfy governance.
+Core gates include bugfix proof, test-impact map, public-contract compatibility, environment fingerprint, dependency admission/delta, generated artifacts, pre-change safepoint and migration proof.
 
-Applicable core gates include bugfix proof, test-impact mapping, contract compatibility, environment fingerprint, dependency admission/delta, generated-artifact synchronization, pre-change safepoint and migration proof.
+Operational Assurance includes, when applicable:
 
-New direct dependencies require an admitted dependency decision before installation. Required high-risk destructive/migration/deployment-state mutations require a pre-change recoverable safepoint before mutation.
+```text
+PREVIEW_ENVIRONMENT_GATE
+USER_FLOW_VERIFICATION
+VISUAL_BEHAVIOR_GATE
+RELEASE_RECOVERY_PROOF
+TOOL_CAPABILITY_PROFILE
+SAFE_EXPERIMENTATION
+```
 
-## Operational Assurance
+Verification may require more evidence but never grants more privilege.
 
-When applicable, plan and record realistic runtime and external-side-effect proof through the same verification profile/evidence surface:
+Exact evidence reuse requires a prior `PASS` and byte-identical dependency map including candidate, affected contracts/call paths, validation command, environment/toolchain, policies and selected skills. Any changed dependency is `EVIDENCE_STALE`.
 
-- `PREVIEW_ENVIRONMENT_GATE`
-- `USER_FLOW_VERIFICATION`
-- `VISUAL_BEHAVIOR_GATE`
-- `RELEASE_RECOVERY_PROOF`
-- `TOOL_CAPABILITY_PROFILE` including relevant MCP capabilities
-- `SAFE_EXPERIMENTATION`
+## Independent review and lenses
 
-Verification may require more proof but never grants more privilege. Mocks can support testing but do not replace required real runtime/integration evidence. Never use production credentials, data or infrastructure merely to satisfy a test gate.
+Executor completion moves to `READY_FOR_REVIEW`, not `TASK_VALIDATED`.
 
-## Adaptive independent review
-
-Executor completion with fresh required evidence moves the task to `READY_FOR_REVIEW`, not directly to final validation.
-
-### STANDARD
-
-Independent Reviewer verifies canonical requirements, plan authorization, frozen diff/target, required evidence, security/secrets, runtime/regression behavior, maintainability, deployment scope, applicable Operational Assurance and product capability traceability.
-
-Reviewer PASS makes the task `TASK_VALIDATED`.
-
-### ELEVATED
-
-Use for HIGH-risk tasks, security-sensitive work, major migrations, material public-contract changes, recovery-sensitive work, milestone completion, product completeness reconciliation or release candidates:
+STANDARD review uses the independent Reviewer. ELEVATED review uses:
 
 ```text
 reviewer
@@ -252,109 +202,53 @@ reviewer-architecture
 final-reviewer
 ```
 
-The two advisory reviewers inspect the same frozen target independently and do not consume sibling current-cycle findings. Final Reviewer receives both only after completion and independently verifies requirement provenance, product scope, plan/risk authorization, evidence freshness and allegations.
+The siblings inspect the same frozen candidate independently and do not consume sibling current-cycle findings. Final Reviewer validates primary evidence and allegations after both reports exist.
 
-Final Reviewer task verdicts:
+`REVIEW_LENS_MATRIX_V1` always preserves implementation correctness/regression/test-quality/maintainability and architecture/security/data/recovery baselines. `TASK_RISK_PROFILE` adds conditional lenses such as authorization, input validation, public contracts, migrations, dependency supply chain, performance, accessibility, deployment, observability, resilience, recovery and tool capability. Focus changes; authority does not.
+
+A correct implementation of a materially incorrect plan is `PLAN_DEFECT`, not PASS.
+
+## Governed engineering memory
+
+Local memory lifecycle:
 
 ```text
-PASS
-IMPLEMENTATION_DEFECT
-PLAN_DEFECT
-BLOCKED
+CANDIDATE | ACTIVE | SUPERSEDED | REJECTED
 ```
 
-Only `PASS` makes an ELEVATED task `TASK_VALIDATED`. A correct implementation of a materially incorrect plan is `PLAN_DEFECT`, not PASS.
+Executor and reviewers may propose lessons. Only Final Reviewer may activate, reject or supersede them with review evidence. Memory remains advisory and never outranks current requirements, source, tests, contracts or runtime evidence.
 
-## Bounded correction cycles
+Policy promotion is never automatic. Eligibility requires at least two distinct validated task occurrences and explicit owner authorization; the runtime reports eligibility but does not edit project policy.
 
-Baseline review, required discovery review, task final adjudication and product-completeness reconciliation each allow a maximum three failed correction cycles.
+## Bounded correction and arbitration
 
-After the third failed cycle, stop fail-closed, set a blocking state and emit:
+Baseline review, required discovery, task final adjudication and product-completeness reconciliation each allow a maximum three failed cycles. Then stop fail-closed with:
 
 ```text
 HUMAN_INPUT_REQUIRED: YES
 ```
 
-Do not run unbounded autonomous repair/review loops merely to force convergence.
+Do not consume unbounded autonomous cycles to force convergence.
 
-## Arbitration
+Material Architect/Executor disagreement becomes `ARBITRATION_REQUIRED`. Arbiter independently inspects controlling requirements, product decisions, plan, candidate, evidence and risks. Executor resumes only after Architect re-authorizes the task.
 
-If Executor evidence materially conflicts with the approved plan, Executor stops and returns evidence to Architect.
+## Maintainability, secrets and Git
 
-Architect first evaluates normal replanning. If an unresolved material disagreement remains about feasibility, correctness, security, scope, architecture, migration safety, maintainability or acceptance evidence, set `ARBITRATION_REQUIRED` and recommend `/ai-arbiter`.
+Keep production modules focused and cohesive. Do not create or extend monolithic god files, use arbitrary line-count limits, or fragment behavior into artificial micro-files and wrapper-only abstractions. When a task materially worsens a multi-responsibility file, include a targeted split by stable responsibility.
 
-Arbiter independently inspects requirements, applicable product decisions, plan, implementation evidence, repository state, tests and relevant risk/evidence implications. Neither Architect nor Executor automatically wins.
+Plaintext secrets are excluded from Git. Prefer runtime secret delivery. If a secret is tracked, ignore rules alone are insufficient: remove from tracking and assess revocation/rotation.
 
-Executor resumes only after Architect re-authorizes the revised/current task as `READY_FOR_EXECUTION`.
+A local task commit occurs only after `TASK_VALIDATED`, a valid staged candidate receipt and a scoped staged-diff/secret check. Do not blanket-stage unrelated changes.
 
-## Maintainable source structure
+Never push by default. Push, merge, PR creation, publication, deployment and production rollback require explicit action-scoped user authorization; prior authorization is not reusable. The bundled hook blocks automatic external actions, which must be performed manually by the owner after review.
 
-Production source must remain understandable and maintainable over time.
+`.ai/DEPLOYMENT_SCOPE.md` separates development workspace from deployable runtime. Production packages contain only runtime-required files/assets and exclude `.ai/`, tests, development-only documentation, evidence/review artifacts, local tooling, caches, IDE state and plaintext secrets unless an explicit runtime/legal/packaging exception applies.
 
-- Prefer focused, cohesive files/modules with one clear responsibility or tightly cohesive concern.
-- Do not create or extend monolithic god files that accumulate unrelated responsibilities.
-- When an approved change materially worsens an oversized/multi-responsibility file, Architect includes a targeted split or extraction in scope.
-- Split by responsibility and stable domain/technical boundaries, not arbitrary line-count targets.
-- Do not create artificial micro-files, wrapper-only abstractions, one-use interfaces or needless indirection.
-- Prefer narrow explicit interfaces and independently testable units.
-- Do not perform unrelated repository-wide refactors solely for style.
+## Release
 
-## Secret safety
+Final release requires applicable `PRODUCT_COMPLETE`, fresh deterministic candidate/receipt verification, Evidence-Driven and Operational Assurance proof, secret scanning, deployment scope, migration/upgrade evidence, clean installation, required real integrations, production-package extraction/reinstall, recovery proof and independent ELEVATED release review.
 
-Plaintext secrets are excluded from Git by default.
-
-Treat credentials, access tokens, API keys, passwords, private certificates/signing material, private connection strings, production `.env` files and equivalents as secrets.
-
-- Never stage or commit plaintext secrets without explicit authorization for that exact exception after stating risk.
-- Prefer environment variables, secret managers, encrypted stores or non-secret references.
-- Ensure repository-specific local secret files are ignored.
-- Safe example files contain placeholders only.
-- If a secret is already tracked, ignore rules alone are insufficient: remove from tracking and assess revocation/rotation.
-- Architect, Reviewer, Architecture/Security Reviewer and Final Reviewer check plaintext-secret exposure appropriate to scope.
-- Executor checks staged content before commit.
-
-## Git policy
-
-A task commit occurs only after `TASK_VALIDATED`.
-
-Before commit:
-
-1. append validation/review result to `PROJECT_HISTORY.md`;
-2. reconcile Git status and validated frozen target;
-3. stage only approved task files and relevant `.ai/` state/evidence;
-4. inspect staged diff;
-5. secret-scan staged content;
-6. create one local commit identifying the task;
-7. verify the commit succeeded.
-
-Do not blanket-stage unrelated changes.
-
-Never push by default. Every push requires explicit action-scoped user authorization; prior authorization is not reusable.
-
-## Development workspace and deployment scope
-
-The repository is a development workspace. The deployable production codebase is a defined subset in `.ai/DEPLOYMENT_SCOPE.md`.
-
-For new projects keep tests, development documentation, `.ai/`, review/evidence artifacts, local tooling, caches, IDE state and secrets outside production runtime scope.
-
-For existing projects, do not blindly relocate files; determine actual runtime requirements and plan safe separation.
-
-Final production packages include only runtime-required files/assets unless an explicit documented runtime/legal/packaging exception applies.
-
-## Installation, migrations and release
-
-At intake determine `GREENFIELD` versus `EXISTING_INSTALLATION`.
-
-Existing systems require current installed/schema/runtime/migration-state understanding, representative forward-upgrade/data-preservation proof and final clean-install proof from zero.
-
-Final release requires `PRODUCT_COMPLETE` when product state applies and fresh applicable evidence including tests/build/static/security checks, secret scanning, deployment scope, migration/upgrade proof, clean install, required external/runtime verification, production-package extraction/reinstall verification, recovery proof when applicable and independent ELEVATED release review.
-
-Final production status is exactly:
-
-```text
-READY_FOR_PRODUCTION
-NOT_READY_FOR_PRODUCTION
-```
+Neither a receipt nor a release verdict authorizes external delivery.
 
 ## Machine-readable result
 
@@ -364,12 +258,14 @@ Task-oriented commands end with:
 GOVERNANCE_RESULT
 TASK_ID: <id or NONE>
 STATE: <state>
-NEXT_ACTION: <action or NONE>
+NEXT_ACTION: <typed action or NONE>
 CYCLE: <n/3 or N/A>
 HUMAN_INPUT_REQUIRED: YES|NO
 RESUMABLE: YES|NO
 CHECKPOINT: <RUN_STATE path or NONE>
 EVIDENCE_STATUS: COMPLETE|PARTIAL|BLOCKED|N/A
+CANDIDATE_STATUS: PASS|MISMATCH|UNAVAILABLE|N/A
+RECEIPT_STATUS: PASS|MISMATCH|UNAVAILABLE|N/A
 ```
 
-Keep `.ai/STATUS.md`, applicable product state, task `RUN_STATE.json`, evidence and `PROJECT_HISTORY.md` synchronized. Concise narrative may explain the result, but the block is the stable routing surface.
+Keep `.ai/STATUS.md`, product state, task `RUN_STATE.json`, evidence, receipt and `PROJECT_HISTORY.md` synchronized.
