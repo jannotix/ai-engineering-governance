@@ -16,6 +16,7 @@ const { startContext, recordContextCycle, selectSkills } = require(path.join(RUN
 const { createEvidenceRecord, checkEvidenceReuse } = require(path.join(RUNTIME, "evidence-reuse.js"))
 const { deriveReviewLenses } = require(path.join(RUNTIME, "review-lenses.js"))
 const { GovernedMemory } = require(path.join(RUNTIME, "governed-memory.js"))
+const { resolveInside } = require(path.join(RUNTIME, "project.js"))
 
 function tempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "aeg-runtime-"))
@@ -40,6 +41,19 @@ function initGitProject() {
 
 test("canonical hashing is key-order stable", () => {
   assert.equal(canonicalHash({ b: 2, a: 1 }), canonicalHash({ a: 1, b: 2 }))
+})
+
+test("governed paths reject symbolic-link or junction traversal", (t) => {
+  const root = tempDir()
+  const outside = tempDir()
+  const link = path.join(root, ".ai")
+  try {
+    fs.symlinkSync(outside, link, process.platform === "win32" ? "junction" : "dir")
+  } catch (error) {
+    t.skip(`link creation unavailable: ${error.code || error.message}`)
+    return
+  }
+  assert.throws(() => resolveInside(root, ".ai/tasks/TASK-1/RUN_STATE.json"), /symbolic link|junction/i)
 })
 
 test("workspace candidate excludes root .git and .ai and detects content changes", () => {
