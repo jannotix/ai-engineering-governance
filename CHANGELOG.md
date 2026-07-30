@@ -2,18 +2,19 @@
 
 ## 2.0.0 — 2026-07-30
 
-- Added a zero-dependency Node.js 22+ deterministic runtime alongside the existing prompt governance.
+- Added a zero-dependency Node.js 22.13.0+ deterministic runtime alongside the existing prompt governance.
 - Added immutable `workspace`, `staged`, `commit`, and `base-diff` candidate projections with content-aware SHA-256 identity.
+- Added fail-closed governed-path validation that rejects symbolic-link and junction traversal outside canonical project state.
 - Added `GOVERNANCE_APPROVAL_RECEIPT_V1`, binding approved requirements, execution packet, verification profile, evidence, both independent reviews, and Final Reviewer adjudication to the exact reviewed candidate.
-- Added a ZCode `PreToolUse` staged receipt gate that blocks `git commit` when the Git index or bound evidence changes; direct receipt mutation is denied.
+- Added a ZCode `PreToolUse` staged receipt gate that blocks `git commit` when the Git index or bound evidence changes; direct and patch-based receipt mutation is denied.
 - Added `ACTIONABLE_CONTINUATION_V1` so every non-terminal `RUN_STATE.json` contains an exact `/ai-*` command and expected postcondition or a concrete human decision.
 - Added deterministic `CONTEXT_BUDGET_V1`, a maximum of three retrieval cycles, explicit `CONTEXT_SUFFICIENT | BLOCKED_CONTEXT_GAP`, context metrics, and governed skill selection by trust, applicability, conflicts, overlap, tools, and token budget.
 - Added exact evidence reuse: only a prior PASS with a byte-identical dependency map is reusable; changed inputs return `EVIDENCE_STALE`.
 - Added `REVIEW_LENS_MATRIX_V1` with invariant implementation and architecture/security baselines plus risk-derived authorization, contract, migration, dependency, performance, accessibility, deployment, observability, resilience, recovery, and tooling lenses.
 - Added Final-Reviewer-governed local SQLite engineering memory with `CANDIDATE | ACTIVE | SUPERSEDED | REJECTED`; policy promotion remains owner-authorized and requires at least two validated task occurrences.
 - Added native ZCode `SessionStart`, `PreToolUse`, and `PostToolUse` process hooks and a local stdio MCP server exposing deterministic candidate, receipt, state, context, evidence, lens, and memory tools.
-- Added fail-closed blocking for automatic push, PR creation/merge, publication, deployment, production rollback, frozen-target mutation, and invalid commits.
-- Added Node unit and subprocess contract simulations for MCP and Hook behavior; CI now validates Python contracts, Node syntax/runtime, JSON manifests, repository hygiene, and obvious secret patterns.
+- Added fail-closed blocking for automatic push, PR creation/merge, publication, deployment, production rollback, frozen-target mutation, and invalid commits, including common shell-wrapper and opaque ApplyPatch cases.
+- Added Node unit and subprocess contract simulations for MCP and Hook behavior; CI now validates Python contracts, Node syntax/runtime, JSON manifests, path safety, repository hygiene, and obvious secret patterns on Linux and Windows.
 - Preserved all nine public commands, adaptive product discovery, requirement provenance, Evidence-Driven Verification, Operational Assurance, independent review, Arbiter authority, model/provider neutrality, production-only packaging, and explicit external-action authorization.
 
 ## 1.2.0 — 2026-07-28
