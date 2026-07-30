@@ -1,0 +1,79 @@
+name: Publish v2.0.0
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-v2.0.0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate release metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          expected = "2.0.0"
+          marketplace = json.loads(Path("marketplace.json").read_text(encoding="utf-8"))["plugins"][0]["version"]
+          plugin = json.loads(Path("plugins/ai-engineering-governance/.zcode-plugin/plugin.json").read_text(encoding="utf-8"))["version"]
+          package = json.loads(Path("package.json").read_text(encoding="utf-8"))["version"]
+          skill = Path("plugins/ai-engineering-governance/skills/ai-engineering-governance/SKILL.md").read_text(encoding="utf-8")
+          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+
+          assert marketplace == expected, ("marketplace", marketplace)
+          assert plugin == expected, ("plugin", plugin)
+          assert package == expected, ("package", package)
+          assert f"version: {expected}" in skill
+          assert f"## {expected} — 2026-07-30" in changelog
+          PY
+
+      - name: Build release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          text = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          marker = "## 2.0.0 — 2026-07-30\n"
+          section = text.split(marker, 1)[1].split("\n## ", 1)[0].strip()
+          Path("RELEASE_NOTES_2.0.0.md").write_text(
+              "AI Engineering Governance 2.0.0 introduces deterministic local runtime enforcement for ZCode while preserving the existing product and engineering governance workflow.\n\n"
+              + section
+              + "\n\n**Runtime requirement:** Node.js 22.13.0 or newer.\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Create tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view v2.0.0 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release v2.0.0 already exists; no action required."
+            exit 0
+          fi
+
+          gh release create v2.0.0 \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "AI Engineering Governance 2.0.0 — Deterministic Runtime Governance" \
+            --notes-file RELEASE_NOTES_2.0.0.md \
+            --verify-tag=false
