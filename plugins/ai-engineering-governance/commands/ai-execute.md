@@ -1,52 +1,26 @@
 ---
-description: Implement the current Architect-approved task against its product-capability, risk, and verification contracts, record task-local evidence, and hand the frozen target to governed review before any local commit.
+description: Implement the Architect-approved task, record exact evidence, freeze the reviewed candidate and route to governed review before any commit.
 skills: ai-engineering-governance
 ---
 
-Act strictly in the Executor role.
+Act strictly as Executor.
 
-Read `.ai/STATUS.md`, reusable baseline/context/deployment state, applicable approved product blueprint/capability state, and current task:
+Read current product/task state, approved requirements, context manifest, task plan, verification profile and RUN_STATE. Refuse implementation unless state is `READY_FOR_EXECUTION`, context is sufficient and actionable continuation authorizes `/ai-execute`.
 
-```text
-APPROVED_REQUIREMENTS.md
-CONTEXT_MANIFEST.md
-TASK_PLAN.md
-VERIFICATION_PROFILE.md
-RUN_STATE.json
-```
+Implement only approved scope. Respect capability IDs, maintainability boundaries, dependency admission, safepoints, migration constraints, secrets and deployment scope.
 
-Refuse implementation unless state is `READY_FOR_EXECUTION`, required discovery/product approvals have passed, no material steering remains unprocessed, and the task contract is complete/consistent.
+Run exact repository-native validation and Operational Assurance. Record proof as `PASS | FAIL | UNAVAILABLE | STALE | BLOCKED`.
 
-Read `WORK_CLASS`, `DISCOVERY_DEPTH`, product blueprint version, affected capability IDs, expected completeness impact, `TASK_RISK_PROFILE` and planned gate applicability before editing. Do not silently downgrade discovery/risk, change capability scope or reinterpret required evidence.
+Before accepting prior proof, call **evidence reuse** verification using the complete dependency map. `EVIDENCE_STALE` requires fresh execution.
 
-Implement only approved scope/slice using the minimum-change plan and vertical milestone boundary. Respect maintainability, dependency admission, pre-change safepoints, migration constraints, secret policy and deployment scope.
+After implementation:
 
-Run repository-native validation required by `VERIFICATION_PROFILE.md`. Record exact commands/results/observations in `.ai/tasks/<TASK-ID>/evidence/VERIFICATION_EVIDENCE.md`.
+1. reconcile actual diff with approved scope;
+2. freeze the exact **candidate projection** required by the plan;
+3. persist its `GOVERNANCE_CANDIDATE_V1` digest in the review packet;
+4. update RUN_STATE with execution complete and `review_frozen: true`;
+5. set `READY_FOR_REVIEW`;
+6. set **actionable continuation** to `/ai-review <TASK-ID>` with expected postcondition `TASK_VALIDATED` or a review defect state;
+7. append project history and emit `GOVERNANCE_RESULT`.
 
-Evidence status is only:
-
-```text
-PASS | FAIL | UNAVAILABLE | STALE | BLOCKED
-```
-
-Do not convert unavailable/stale evidence into PASS. When required external/runtime proof is unavailable, request minimum safe access and remain blocked.
-
-Execute required Operational Assurance using existing/approved project mechanisms; never widen permissions, use production secrets/data, deploy, rollback, merge or push merely to obtain evidence.
-
-When primary evidence materially conflicts with approved requirements, product decisions/capabilities or plan, stop and return to Architect; do not self-redesign or apply transient steering.
-
-When implementation and fresh required evidence are complete:
-
-1. reconcile actual diff with approved task and capability traceability;
-2. update `RUN_STATE.json` with execution complete;
-3. freeze source/documentation/evidence target for review;
-4. set `review_frozen: true`;
-5. set project/task state to `READY_FOR_REVIEW`;
-6. append handoff event to `PROJECT_HISTORY.md`;
-7. emit `GOVERNANCE_RESULT`.
-
-Do not set `TASK_VALIDATED`, `MILESTONE_VALIDATED` or `PRODUCT_COMPLETE`, and do not create task commit until `/ai-review` completes required review depth.
-
-After governed review sets `TASK_VALIDATED`, perform scoped staged-diff + plaintext-secret check and create exactly one local task commit. Never push without explicit authorization for that specific push.
-
-If selected ZCode model conflicts with Executor role recorded in `.ai/CONFIG.md`, warn before proceeding.
+Do not self-validate, create an approval receipt, commit, push or deploy before review.
